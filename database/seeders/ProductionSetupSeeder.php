@@ -60,6 +60,9 @@ class ProductionSetupSeeder extends Seeder
 
         // Créer permissions
         $permissions = [
+            // Dashboard
+            'dashboard.view',
+
             // Clients
             'view_clients',
             'create_clients',
@@ -67,10 +70,11 @@ class ProductionSetupSeeder extends Seeder
             'delete_clients',
             'verify_kyc',
 
-            // Comptes
+            // Comptes (Accounts)
             'view_accounts',
             'create_accounts',
             'edit_accounts',
+            'accounts.edit',
             'manage_account_status',
 
             // Transactions
@@ -91,10 +95,22 @@ class ProductionSetupSeeder extends Seeder
             'manage_branches',
             'manage_plans',
 
-            // Gestion financière
+            // Branches
+            'branches.view',
+            'branches.create',
+            'branches.edit',
+            'branches.delete',
+
+            // Gestion financière (Fund Movements)
             'view_fund_movements',
+            'fund-movements.view',
+            'fund-movements.create',
+            'fund-movements.approve',
             'create_fund_movements',
             'approve_fund_movements',
+
+            // Caisse Succursale (Branch Cash)
+            'branch-cash.view',
             'manage_branch_cash',
         ];
 
