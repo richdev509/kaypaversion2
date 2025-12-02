@@ -2,7 +2,7 @@
 
 /**
  * Script de déploiement intelligent KAYPA
- * 
+ *
  * Analyse automatiquement la base de données et applique les modifications nécessaires
  * sans perturber les données existantes
  */
@@ -47,7 +47,7 @@ class SmartDeployer
     private function checkDatabaseConnection()
     {
         $this->printStep("Vérification connexion base de données");
-        
+
         try {
             DB::connection()->getPdo();
             $dbName = config('database.connections.mysql.database');
@@ -65,16 +65,16 @@ class SmartDeployer
 
         // 1. Vérifier les tables principales
         $this->checkMainTables();
-        
+
         // 2. Vérifier les tables Spatie Permission
         $this->checkSpatiePermissionTables();
-        
+
         // 3. Vérifier les colonnes manquantes
         $this->checkMissingColumns();
-        
+
         // 4. Vérifier les index et clés étrangères
         $this->checkIndexesAndForeignKeys();
-        
+
         // 5. Vérifier les données critiques
         $this->checkCriticalData();
     }
@@ -82,11 +82,11 @@ class SmartDeployer
     private function checkMainTables()
     {
         echo "📋 Vérification tables principales...\n";
-        
+
         $requiredTables = [
-            'users', 'clients', 'accounts', 'account_transactions', 
-            'branches', 'payments', 'withdrawals', 'plans', 
-            'plan_montants', 'reports', 'cities', 'communes', 
+            'users', 'clients', 'accounts', 'account_transactions',
+            'branches', 'payments', 'withdrawals', 'plans',
+            'plan_montants', 'reports', 'cities', 'communes',
             'departments', 'user_devices'
         ];
 
@@ -108,7 +108,7 @@ class SmartDeployer
     private function checkSpatiePermissionTables()
     {
         echo "\n🔐 Vérification tables Spatie Permission...\n";
-        
+
         $spatieTables = [
             'permissions',
             'roles',
@@ -140,7 +140,7 @@ class SmartDeployer
     private function checkMissingColumns()
     {
         echo "\n🔍 Vérification colonnes...\n";
-        
+
         $requiredColumns = [
             'users' => ['branch_id', 'is_active', 'last_login_at', 'failed_login_attempts'],
             'clients' => ['branch_id', 'id_card_number', 'phone', 'address', 'city_id', 'commune_id'],
@@ -177,7 +177,7 @@ class SmartDeployer
     private function checkIndexesAndForeignKeys()
     {
         echo "\n🔗 Vérification index et clés étrangères...\n";
-        
+
         // Vérifier les index importants
         $criticalIndexes = [
             'users' => ['email', 'branch_id'],
@@ -198,7 +198,7 @@ class SmartDeployer
     private function checkCriticalData()
     {
         echo "\n📊 Vérification données critiques...\n";
-        
+
         // Vérifier qu'il y a au moins une branche
         if (Schema::hasTable('branches')) {
             $branchCount = DB::table('branches')->count();
@@ -239,7 +239,7 @@ class SmartDeployer
                     ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
                     ->where('roles.name', 'admin')
                     ->count();
-                
+
                 if ($adminCount === 0) {
                     echo "   ⚠️  Aucun administrateur trouvé\n";
                     $this->issues[] = [
@@ -273,7 +273,7 @@ class SmartDeployer
 
         $critical = array_filter($this->issues, fn($i) => $i['severity'] === 'critical');
         $high = array_filter($this->issues, fn($i) => $i['severity'] === 'high');
-        
+
         if (!empty($critical)) {
             echo "🔴 Critiques: " . count($critical) . "\n";
         }
@@ -294,6 +294,9 @@ class SmartDeployer
         $this->printStep("Application des corrections");
         echo "\n";
 
+        // TOUJOURS synchroniser les migrations en premier
+        $this->syncMigrations();
+
         $fixes = array_unique($this->fixes);
 
         foreach ($fixes as $fix) {
@@ -301,19 +304,19 @@ class SmartDeployer
                 case 'install_spatie_permission':
                     $this->installSpatiePermission();
                     break;
-                
+
                 case 'run_migrations':
                     $this->runMigrations();
                     break;
-                
+
                 case 'create_default_branch':
                     $this->createDefaultBranch();
                     break;
-                
+
                 case 'seed_roles_permissions':
                     $this->seedRolesAndPermissions();
                     break;
-                
+
                 case 'create_admin_user':
                     $this->createAdminUser();
                     break;
@@ -321,10 +324,108 @@ class SmartDeployer
         }
     }
 
-    private function installSpatiePermission()
+    private function syncMigrations()
+    {
+        echo "🔄 Synchronisation des migrations avec les tables existantes...\n";
+
+        try {
+            // Obtenir toutes les tables existantes
+            $existingTables = $this->getExistingTables();
+
+            // Obtenir les migrations déjà enregistrées
+            $ranMigrations = DB::table('migrations')->pluck('migration')->toArray();
+
+            // Obtenir tous les fichiers de migration
+            $allMigrations = $this->getAllMigrationFiles();
+
+            // Mapper les migrations aux tables
+            $migrationToTable = $this->mapMigrationsToTables($allMigrations);
+
+            $synced = 0;
+
+            foreach ($migrationToTable as $migration => $table) {
+                // Si la table existe mais la migration n'est pas enregistrée
+                if (!in_array($migration, $ranMigrations) && in_array($table, $existingTables)) {
+                    try {
+                        DB::table('migrations')->insert([
+                            'migration' => $migration,
+                            'batch' => 1
+                        ]);
+                        echo "   ✓ Migration synchronisée: $migration → $table\n";
+                        $synced++;
+                    } catch (\Exception $e) {
+                        // Ignorer les doublons
+                        if (!str_contains($e->getMessage(), 'Duplicate entry')) {
+                            echo "   ⚠️  Erreur sync $migration: " . $e->getMessage() . "\n";
+                        }
+                    }
+                }
+            }
+
+            if ($synced > 0) {
+                $this->printSuccess("$synced migration(s) synchronisée(s)");
+            } else {
+                echo "   ℹ️  Aucune synchronisation nécessaire\n";
+            }
+        } catch (\Exception $e) {
+            echo "   ⚠️  Erreur synchronisation: " . $e->getMessage() . "\n";
+        }
+
+        echo "\n";
+    }
+
+    private function getExistingTables(): array
+    {
+        try {
+            $tables = DB::select('SHOW TABLES');
+            $dbName = 'Tables_in_' . config('database.connections.mysql.database');
+
+            return array_map(function($table) use ($dbName) {
+                return $table->$dbName;
+            }, $tables);
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    private function getAllMigrationFiles(): array
+    {
+        $path = database_path('migrations');
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        $files = glob($path . '/*.php');
+
+        return array_map(function ($file) {
+            return str_replace('.php', '', basename($file));
+        }, $files);
+    }
+
+    private function mapMigrationsToTables(array $migrations): array
+    {
+        $map = [];
+
+        foreach ($migrations as $migration) {
+            // Extraire le nom de la table du nom de la migration
+            // Format: YYYY_MM_DD_HHMMSS_create_table_name_table.php
+            if (preg_match('/create_(.+?)_table/', $migration, $matches)) {
+                $tableName = $matches[1];
+                $map[$migration] = $tableName;
+            }
+            // Format alternatif: add_column_to_table
+            elseif (preg_match('/to_(.+?)_table/', $migration, $matches)) {
+                $tableName = $matches[1];
+                // Ne pas synchroniser les migrations "add" automatiquement
+                // car elles peuvent avoir des colonnes à ajouter
+            }
+        }
+
+        return $map;
+    }    private function installSpatiePermission()
     {
         echo "🔐 Installation Spatie Permission...\n";
-        
+
         try {
             // Publier les migrations
             Artisan::call('vendor:publish', [
@@ -332,11 +433,11 @@ class SmartDeployer
                 '--force' => true
             ]);
             echo "   ✓ Fichiers publiés\n";
-            
+
             // Exécuter les migrations
             Artisan::call('migrate', ['--force' => true]);
             echo "   ✓ Tables créées\n";
-            
+
             $this->printSuccess("Tables Spatie Permission installées");
         } catch (\Exception $e) {
             $this->printError("Erreur installation Spatie: " . $e->getMessage());
@@ -345,31 +446,135 @@ class SmartDeployer
 
     private function runMigrations()
     {
-        echo "🗄️  Exécution des migrations...\n";
-        
+        echo "🗄️  Exécution des migrations intelligentes...\n";
+
         try {
-            Artisan::call('migrate', ['--force' => true]);
+            // Utiliser notre commande smart migrate
+            Artisan::call('migrate:smart', ['--force' => true]);
             $output = Artisan::output();
-            
-            if (str_contains($output, 'Nothing to migrate')) {
-                echo "   ℹ️  Aucune nouvelle migration\n";
-            } else {
-                echo "   ✓ Migrations appliquées\n";
-            }
-            
+
+            echo $output;
             $this->printSuccess("Base de données mise à jour");
         } catch (\Exception $e) {
-            $this->printError("Erreur migrations: " . $e->getMessage());
+            // Si la commande n'existe pas, essayer d'ajouter les colonnes manuellement
+            echo "   ⚠️  Utilisation de la méthode alternative...\n";
+            $this->addMissingColumnsManually();
         }
     }
 
-    private function createDefaultBranch()
+    private function addMissingColumnsManually()
+    {
+        echo "   🔧 Ajout manuel des colonnes manquantes...\n";
+
+        $columnsToAdd = [
+            'users' => [
+                ['name' => 'is_active', 'sql' => "ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1"],
+                ['name' => 'last_login_at', 'sql' => "ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP NULL"],
+                ['name' => 'failed_login_attempts', 'sql' => "ALTER TABLE users ADD COLUMN failed_login_attempts INT NOT NULL DEFAULT 0"],
+            ],
+            'clients' => [
+                ['name' => 'id_card_number', 'sql' => "ALTER TABLE clients ADD COLUMN id_card_number VARCHAR(255) NULL"],
+            ],
+            'accounts' => [
+                ['name' => 'branch_id', 'sql' => "ALTER TABLE accounts ADD COLUMN branch_id BIGINT UNSIGNED NULL"],
+            ],
+            'account_transactions' => [
+                ['name' => 'branch_id', 'sql' => "ALTER TABLE account_transactions ADD COLUMN branch_id BIGINT UNSIGNED NULL"],
+                ['name' => 'performed_by', 'sql' => "ALTER TABLE account_transactions ADD COLUMN performed_by BIGINT UNSIGNED NULL"],
+            ],
+            'branches' => [
+                ['name' => 'code', 'sql' => "ALTER TABLE branches ADD COLUMN code VARCHAR(50) NULL"],
+                ['name' => 'phone', 'sql' => "ALTER TABLE branches ADD COLUMN phone VARCHAR(255) NULL"],
+                ['name' => 'is_active', 'sql' => "ALTER TABLE branches ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1"],
+            ],
+        ];
+
+        foreach ($columnsToAdd as $table => $columns) {
+            if (!Schema::hasTable($table)) {
+                continue;
+            }
+
+            foreach ($columns as $column) {
+                if (!Schema::hasColumn($table, $column['name'])) {
+                    try {
+                        DB::statement($column['sql']);
+                        echo "      ✓ Colonne ajoutée: {$table}.{$column['name']}\n";
+                    } catch (\Exception $e) {
+                        // Ignorer les erreurs si la colonne existe déjà
+                        if (!str_contains($e->getMessage(), 'Duplicate column')) {
+                            echo "      ⚠️  {$table}.{$column['name']}: " . $e->getMessage() . "\n";
+                        }
+                    }
+                }
+            }
+        }
+
+        // Créer les tables manquantes
+        $this->createMissingTablesManually();
+    }
+
+    private function createMissingTablesManually()
+    {
+        // Table payments
+        if (!Schema::hasTable('payments')) {
+            try {
+                DB::statement("
+                    CREATE TABLE payments (
+                        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        account_id BIGINT UNSIGNED NOT NULL,
+                        amount DECIMAL(15, 2) NOT NULL,
+                        payment_date DATE NOT NULL,
+                        method VARCHAR(50) NOT NULL,
+                        reference VARCHAR(255) NULL,
+                        status VARCHAR(50) NOT NULL DEFAULT 'completed',
+                        performed_by BIGINT UNSIGNED NULL,
+                        branch_id BIGINT UNSIGNED NULL,
+                        created_at TIMESTAMP NULL,
+                        updated_at TIMESTAMP NULL,
+                        INDEX idx_account_id (account_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                ");
+                echo "      ✓ Table créée: payments\n";
+            } catch (\Exception $e) {
+                if (!str_contains($e->getMessage(), 'already exists')) {
+                    echo "      ⚠️  Erreur payments: " . $e->getMessage() . "\n";
+                }
+            }
+        }
+
+        // Table withdrawals
+        if (!Schema::hasTable('withdrawals')) {
+            try {
+                DB::statement("
+                    CREATE TABLE withdrawals (
+                        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        account_id BIGINT UNSIGNED NOT NULL,
+                        amount DECIMAL(15, 2) NOT NULL,
+                        withdrawal_date DATE NOT NULL,
+                        method VARCHAR(50) NOT NULL,
+                        reference VARCHAR(255) NULL,
+                        status VARCHAR(50) NOT NULL DEFAULT 'completed',
+                        performed_by BIGINT UNSIGNED NULL,
+                        branch_id BIGINT UNSIGNED NULL,
+                        created_at TIMESTAMP NULL,
+                        updated_at TIMESTAMP NULL,
+                        INDEX idx_account_id (account_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                ");
+                echo "      ✓ Table créée: withdrawals\n";
+            } catch (\Exception $e) {
+                if (!str_contains($e->getMessage(), 'already exists')) {
+                    echo "      ⚠️  Erreur withdrawals: " . $e->getMessage() . "\n";
+                }
+            }
+        }
+    }    private function createDefaultBranch()
     {
         echo "🏢 Création branche par défaut...\n";
-        
+
         try {
             $exists = DB::table('branches')->where('code', 'MAIN')->exists();
-            
+
             if (!$exists) {
                 DB::table('branches')->insert([
                     'name' => 'Agence Principale',
@@ -392,7 +597,7 @@ class SmartDeployer
     private function seedRolesAndPermissions()
     {
         echo "👥 Configuration rôles et permissions...\n";
-        
+
         try {
             Artisan::call('db:seed', [
                 '--class' => 'ProductionSetupSeeder',
@@ -407,7 +612,7 @@ class SmartDeployer
     private function createAdminUser()
     {
         echo "🔑 Création compte administrateur...\n";
-        
+
         try {
             // Vérifier si un admin existe déjà
             $adminRole = DB::table('roles')->where('name', 'admin')->first();
@@ -423,7 +628,7 @@ class SmartDeployer
 
             if (!$adminExists) {
                 $branchId = DB::table('branches')->first()->id ?? null;
-                
+
                 $userId = DB::table('users')->insertGetId([
                     'name' => 'Administrateur KAYPA',
                     'email' => 'admin@kaypa.ht',
@@ -467,7 +672,7 @@ class SmartDeployer
 
         // Statistiques
         echo "\n📊 Statistiques système:\n";
-        
+
         $stats = [
             'Utilisateurs' => Schema::hasTable('users') ? DB::table('users')->count() : 0,
             'Clients' => Schema::hasTable('clients') ? DB::table('clients')->count() : 0,
