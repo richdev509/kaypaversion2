@@ -56,6 +56,16 @@
                         💰 Caisse Succursale
                     </x-nav-link>
                     @endif
+                    @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+                    <x-nav-link :href="route('client-access.index')" :active="request()->routeIs('client-access.*')">
+                        🔑 Accès Client
+                    </x-nav-link>
+                    @endif
+                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                    <x-nav-link :href="route('affiliates.index')" :active="request()->routeIs('affiliates.*')">
+                        👥 Affiliés
+                    </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -150,6 +160,16 @@
             @if(Auth::user()->hasPermissionTo('branch-cash.view'))
             <x-responsive-nav-link :href="route('branch-cash.index')" :active="request()->routeIs('branch-cash.*')">
                 💰 Caisse Succursale
+            </x-responsive-nav-link>
+            @endif
+            @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+            <x-responsive-nav-link :href="route('client-access.index')" :active="request()->routeIs('client-access.*')">
+                🔑 Accès Client
+            </x-responsive-nav-link>
+            @endif
+            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+            <x-responsive-nav-link :href="route('affiliates.index')" :active="request()->routeIs('affiliates.*')">
+                👥 Affiliés
             </x-responsive-nav-link>
             @endif
         </div>

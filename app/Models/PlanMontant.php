@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PlanMontant extends Model
 {
-    protected $table = 'plan_montants'; // Pluriel
+    protected $table = 'plan_montant'; // Pluriel
 
     protected $fillable = [
         'plan_id',

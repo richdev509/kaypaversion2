@@ -9,6 +9,15 @@ Route::get('/', function () {
     return view('welcome-kaypa');
 })->name('home');
 
+// Routes publiques pour partenariat
+Route::prefix('partenaire')->name('affiliate.')->group(function () {
+    Route::get('/demande', [\App\Http\Controllers\AffiliatePublicController::class, 'showForm'])->name('form');
+    Route::post('/demande', [\App\Http\Controllers\AffiliatePublicController::class, 'submitRequest'])->name('submit');
+    Route::get('/verification/{id}', [\App\Http\Controllers\AffiliatePublicController::class, 'showVerifyForm'])->name('verify-form');
+    Route::post('/verification/{id}', [\App\Http\Controllers\AffiliatePublicController::class, 'verifyCode'])->name('verify');
+    Route::post('/renvoyer-code/{id}', [\App\Http\Controllers\AffiliatePublicController::class, 'resendCode'])->name('resend-code');
+});
+
 // Dashboard Admin (protégé par authentification)
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -128,11 +137,38 @@ Route::middleware('auth')->group(function () {
 
     // Routes Gestion Caisse Succursale
     Route::get('/branch-cash', [\App\Http\Controllers\BranchCashController::class, 'index'])->name('branch-cash.index');
+
+    // Routes Gestion Accès Client (Online Access)
+    Route::get('/client-access', [\App\Http\Controllers\ClientAccessController::class, 'index'])->name('client-access.index');
+    Route::match(['get', 'post'], '/client-access/search', [\App\Http\Controllers\ClientAccessController::class, 'search'])->name('client-access.search');
+    Route::post('/client-access/{client}/grant', [\App\Http\Controllers\ClientAccessController::class, 'grantAccess'])->name('client-access.grant');
+    Route::delete('/client-access/{client}/revoke', [\App\Http\Controllers\ClientAccessController::class, 'revokeAccess'])->name('client-access.revoke');
+
+    // Routes Gestion Affiliés / Partenaires (Admin & Comptable)
+    Route::prefix('affilies')->name('affiliates.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AffiliateController::class, 'index'])->name('index');
+        Route::get('/{affiliate}', [\App\Http\Controllers\AffiliateController::class, 'show'])->name('show');
+        Route::post('/{affiliate}/approve', [\App\Http\Controllers\AffiliateController::class, 'approve'])->name('approve');
+        Route::post('/{affiliate}/reject', [\App\Http\Controllers\AffiliateController::class, 'reject'])->name('reject');
+        Route::post('/{affiliate}/toggle-block', [\App\Http\Controllers\AffiliateController::class, 'toggleBlock'])->name('toggle-block');
+        Route::post('/{affiliate}/resend-code', [\App\Http\Controllers\AffiliateController::class, 'resendCode'])->name('resend-code');
+        Route::post('/{affiliate}/paiement', [\App\Http\Controllers\AffiliateController::class, 'storePaiement'])->name('paiement');
+    });
 });
 
 // Routes publiques pour scan mobile (pas d'authentification requise)
 Route::get('/clients/scan/{token}', [\App\Http\Controllers\ClientController::class, 'scanForm'])->name('clients.scan');
 Route::post('/clients/scan/{token}', [\App\Http\Controllers\ClientController::class, 'scanUpload'])->name('clients.scan.upload');
+
+// Routes Mobile Login (accès client)
+Route::prefix('mobile')->name('mobile.')->group(function () {
+    Route::get('/login', [\App\Http\Controllers\MobileAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\MobileAuthController::class, 'login']);
+    Route::get('/dashboard', [\App\Http\Controllers\MobileAuthController::class, 'dashboard'])->name('dashboard');
+    Route::post('/logout', [\App\Http\Controllers\MobileAuthController::class, 'logout'])->name('logout');
+    Route::get('/change-password', [\App\Http\Controllers\MobileAuthController::class, 'showChangePasswordForm'])->name('change-password');
+    Route::post('/change-password', [\App\Http\Controllers\MobileAuthController::class, 'changePassword']);
+});
 
 // Test de connexion à la base de données KAYPA
 Route::get('/test-db', function () {

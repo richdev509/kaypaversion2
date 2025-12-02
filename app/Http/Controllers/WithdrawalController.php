@@ -92,6 +92,11 @@ class WithdrawalController extends Controller
                 'note' => $request->note ?? "Retrait {$mode} de " . number_format($montant, 2) . " HTG"
             ]);
 
+            // Clôturer le compte si retrait total ou solde à zéro
+            if ($isTotal || $amountAfter <= 0) {
+                $account->update(['status' => 'cloture']);
+            }
+
             DB::commit();
 
             // Message de succès
