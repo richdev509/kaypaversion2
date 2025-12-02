@@ -12,6 +12,7 @@ $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -24,10 +25,25 @@ echo "\n";
 // Réinitialiser le cache des permissions
 app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-// Liste complète de TOUTES les permissions utilisées dans l'application
+// Liste COMPLÈTE de TOUTES les permissions de l'application
+// L'ADMIN doit avoir TOUTES ces permissions
 $allPermissions = [
     // Dashboard
     'dashboard.view',
+
+    // Branches (Succursales)
+    'branches.view',
+    'branches.create',
+    'branches.edit',
+    'branches.delete',
+    'manage_branches',
+
+    // Users (Utilisateurs)
+    'users.view',
+    'users.create',
+    'users.edit',
+    'users.delete',
+    'manage_users',
 
     // Clients
     'clients.view',
