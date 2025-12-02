@@ -725,6 +725,6 @@ class SmartDeployer
     }
 }
 
-// Exécution
+// Exécution du déploiement intelligent
 $deployer = new SmartDeployer();
 $deployer->run();
