@@ -13,9 +13,7 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
+                    <img src="{{ asset('kaypa.png') }}" alt="Kaypa Logo" class="w-10 h-10">
                     <span class="ml-3 text-xl font-bold text-gray-900 dark:text-white">KAYPA</span>
                     <span class="ml-2 px-2 py-1 text-xs font-semibold text-blue-600 bg-blue-100 dark:bg-blue-900 dark:text-blue-300 rounded">v2.0</span>
                 </div>
@@ -30,11 +28,6 @@
                         <a href="{{ route('login') }}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition">
                             Connexion
                         </a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
-                                Créer un compte
-                            </a>
-                        @endif
                     @endauth
                 </div>
             </div>
@@ -62,9 +55,6 @@
                     @else
                         <a href="{{ route('login') }}" class="px-8 py-3 text-lg font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all">
                             Se Connecter
-                        </a>
-                        <a href="{{ route('register') }}" class="px-8 py-3 text-lg font-semibold text-blue-600 bg-white dark:bg-gray-800 dark:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all border-2 border-blue-600">
-                            S'Inscrire
                         </a>
                     @endauth
                 </div>
