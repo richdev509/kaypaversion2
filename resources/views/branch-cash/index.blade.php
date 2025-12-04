@@ -152,13 +152,33 @@
                                         {{ $transaction['date']->format('d/m/Y H:i') }}
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                            {{ $transaction['category'] === 'CLIENT' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
-                                            {{ $transaction['category'] }}
-                                        </span>
+                                        @if($transaction['type'] === 'AJUSTEMENT-DEPOT')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                AJUSTEMENT +
+                                            </span>
+                                        @elseif($transaction['type'] === 'AJUSTEMENT-RETRAIT')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                AJUSTEMENT -
+                                            </span>
+                                        @elseif($transaction['type'] === 'PAIEMENT')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                DÉPÔT
+                                            </span>
+                                        @elseif($transaction['type'] === 'RETRAIT')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                                RETRAIT
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                                {{ $transaction['category'] }}
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                                         {{ $transaction['description'] }}
+                                        @if(in_array($transaction['type'], ['AJUSTEMENT-DEPOT', 'AJUSTEMENT-RETRAIT']))
+                                            <span class="text-xs text-gray-500">(Type: {{ $transaction['type'] }})</span>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $transaction['reference'] }}

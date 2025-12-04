@@ -78,20 +78,15 @@ class AccountTransactionObserver
                     Log::info("Account {$account->account_id}: Clôturé automatiquement (solde = 0 après retrait #{$transaction->id})");
                 }
 
-            } elseif ($transaction->type === 'AJUSTEMENT') {
-                // AJUSTEMENT = correction manuelle
-                // Analyser la note pour savoir si c'est une augmentation ou diminution
-                $note = strtoupper($transaction->note ?? '');
+            } elseif ($transaction->type === 'AJUSTEMENT-DEPOT') {
+                // AJUSTEMENT-DEPOT = correction avec augmentation
+                $branch->increment('cash_balance', $transaction->amount);
+                Log::info("Branch {$branch->name}: +{$transaction->amount} HTG (AJUSTEMENT-DEPOT #{$transaction->id})");
 
-                if (str_contains($note, 'INCREASE') || str_contains($note, 'AUGMENTATION')) {
-                    $branch->increment('cash_balance', $transaction->amount);
-                    Log::info("Branch {$branch->name}: +{$transaction->amount} HTG (AJUSTEMENT INCREASE #{$transaction->id})");
-                } elseif (str_contains($note, 'DECREASE') || str_contains($note, 'DIMINUTION')) {
-                    $branch->decrement('cash_balance', $transaction->amount);
-                    Log::info("Branch {$branch->name}: -{$transaction->amount} HTG (AJUSTEMENT DECREASE #{$transaction->id})");
-                } else {
-                    Log::warning("Branch {$branch->name}: AJUSTEMENT #{$transaction->id} ignoré (type non identifié dans note)");
-                }
+            } elseif ($transaction->type === 'AJUSTEMENT-RETRAIT') {
+                // AJUSTEMENT-RETRAIT = correction avec diminution
+                $branch->decrement('cash_balance', $transaction->amount);
+                Log::info("Branch {$branch->name}: -{$transaction->amount} HTG (AJUSTEMENT-RETRAIT #{$transaction->id})");
             }
 
         } catch (\Exception $e) {

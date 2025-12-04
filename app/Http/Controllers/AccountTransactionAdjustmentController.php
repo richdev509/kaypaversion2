@@ -129,17 +129,19 @@ class AccountTransactionAdjustmentController extends Controller
             Log::info("Ajustement créé - Type: {$adjustmentType}, Montant: {$amount}, Nouveau solde: {$newBalance}");
 
             // Créer la transaction d'ajustement
-            // Créer la transaction d'ajustement
+            // Créer la transaction d'ajustement avec type spécifique
             // NOTE: Le cash_balance sera mis à jour automatiquement par AccountTransactionObserver
+            $transactionType = $adjustmentType === 'increase' ? 'AJUSTEMENT-DEPOT' : 'AJUSTEMENT-RETRAIT';
+
             $adjustmentTransaction = AccountTransaction::create([
                 'account_id' => $account->account_id,
                 'client_id' => $account->client_id,
-                'type' => 'AJUSTEMENT',
+                'type' => $transactionType,
                 'amount' => $amount,
                 'amount_after' => $newBalance,
                 'method' => 'Ajustement manuel',
                 'reference' => 'ADJ-' . now()->format('YmdHis'),
-                'note' => "AJUSTEMENT " . strtoupper($adjustmentType) . ": {$request->reason}",
+                'note' => $request->reason,
                 'created_by' => Auth::id(),
                 'status' => 'ACTIVE',
             ]);
