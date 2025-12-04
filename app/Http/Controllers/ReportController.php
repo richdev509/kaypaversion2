@@ -117,10 +117,10 @@ class ReportController extends Controller
             });
         }
 
-        // Rapport sur les dépôts (incluant ajustements positifs)
+        // Rapport sur les dépôts (incluant ajustements positifs et paiement initial)
         if (in_array($type, ['deposit', 'all'])) {
             $depositsQuery = clone $baseQuery;
-            $depositsQuery->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT']);
+            $depositsQuery->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial']);
 
             $depositsByDate = clone $depositsQuery;
             $recentDeposits = clone $depositsQuery;
@@ -181,7 +181,7 @@ class ReportController extends Controller
     private function getDepositsByBranch($startDate, $endDate, $branchId = null)
     {
         $query = AccountTransaction::whereBetween('account_transactions.created_at', [$startDate, $endDate->endOfDay()])
-            ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT'])
+            ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
             ->where('account_transactions.status', '!=', 'CANCELLED')
             ->join('users', 'account_transactions.created_by', '=', 'users.id')
             ->join('branches', 'users.branch_id', '=', 'branches.id')

@@ -69,6 +69,7 @@ class BranchCashController extends Controller
                 'RETRAIT' => 'Retrait client',
                 'AJUSTEMENT-DEPOT' => 'Ajustement + (Correction)',
                 'AJUSTEMENT-RETRAIT' => 'Ajustement - (Correction)',
+                'Paiement initial' => 'Paiement initial (Ouverture)',
             ];
 
             $impacts = [
@@ -76,6 +77,7 @@ class BranchCashController extends Controller
                 'RETRAIT' => 'OUT',
                 'AJUSTEMENT-DEPOT' => 'IN',
                 'AJUSTEMENT-RETRAIT' => 'OUT',
+                'Paiement initial' => 'IN',
             ];
 
             return [
@@ -127,11 +129,11 @@ class BranchCashController extends Controller
         $branch = Branch::find($branchId);
         $currentBalance = $branch->cash_balance ?? 0;
 
-        // Transactions du jour (incluant ajustements)
+        // Transactions du jour (incluant ajustements et paiement initial)
         $todayDeposits = AccountTransaction::whereHas('account.client', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
-        ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT'])
+        ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
         ->whereDate('created_at', today())
         ->sum('amount');
 
@@ -156,11 +158,11 @@ class BranchCashController extends Controller
             ->whereDate('approved_at', today())
             ->sum('amount');
 
-        // Transactions du mois (incluant ajustements)
+        // Transactions du mois (incluant ajustements et paiement initial)
         $monthDeposits = AccountTransaction::whereHas('account.client', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
-        ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT'])
+        ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
         ->whereMonth('created_at', now()->month)
         ->sum('amount');
 

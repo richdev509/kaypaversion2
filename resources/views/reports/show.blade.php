@@ -104,6 +104,10 @@
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 DÉPÔT
                                             </span>
+                                        @elseif($transaction->type === 'Paiement initial')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 text-cyan-800">
+                                                OUVERTURE
+                                            </span>
                                         @elseif($transaction->type === 'RETRAIT')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                                                 RETRAIT
@@ -129,7 +133,7 @@
                                         {{ $transaction->account ? $transaction->account->account_number : 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium
-                                        {{ in_array($transaction->type, ['PAIEMENT', 'AJUSTEMENT-DEPOT']) ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ in_array($transaction->type, ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial']) ? 'text-green-600' : 'text-red-600' }}">
                                         {{ number_format(abs($transaction->amount), 2) }} HTG
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

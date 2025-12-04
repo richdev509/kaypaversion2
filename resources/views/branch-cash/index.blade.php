@@ -164,6 +164,10 @@
                                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 DÉPÔT
                                             </span>
+                                        @elseif($transaction['type'] === 'Paiement initial')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">
+                                                OUVERTURE
+                                            </span>
                                         @elseif($transaction['type'] === 'RETRAIT')
                                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                                 RETRAIT

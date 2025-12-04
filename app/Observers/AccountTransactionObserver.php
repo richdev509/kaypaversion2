@@ -42,10 +42,10 @@ class AccountTransactionObserver
             }
 
             // Mettre à jour le cash_balance selon le type de transaction
-            if ($transaction->type === 'PAIEMENT') {
-                // PAIEMENT = argent entre dans la caisse (+)
+            if ($transaction->type === 'PAIEMENT' || $transaction->type === 'Paiement initial') {
+                // PAIEMENT ou PAIEMENT INITIAL = argent entre dans la caisse (+)
                 $branch->increment('cash_balance', $transaction->amount);
-                Log::info("Branch {$branch->name}: +{$transaction->amount} HTG (PAIEMENT #{$transaction->id})");
+                Log::info("Branch {$branch->name}: +{$transaction->amount} HTG ({$transaction->type} #{$transaction->id})");
 
             } elseif ($transaction->type === 'RETRAIT') {
                 // RETRAIT = argent sort de la caisse (-)
