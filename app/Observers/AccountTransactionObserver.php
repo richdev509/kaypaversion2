@@ -89,6 +89,8 @@ class AccountTransactionObserver
                 } elseif (str_contains($note, 'DECREASE') || str_contains($note, 'DIMINUTION')) {
                     $branch->decrement('cash_balance', $transaction->amount);
                     Log::info("Branch {$branch->name}: -{$transaction->amount} HTG (AJUSTEMENT DECREASE #{$transaction->id})");
+                } else {
+                    Log::warning("Branch {$branch->name}: AJUSTEMENT #{$transaction->id} ignoré (type non identifié dans note)");
                 }
             }
 

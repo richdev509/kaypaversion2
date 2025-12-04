@@ -128,6 +128,24 @@ class AccountTransactionAdjustmentController extends Controller
 
             Log::info("Ajustement créé - Type: {$adjustmentType}, Montant: {$amount}, Nouveau solde: {$newBalance}");
 
+            // Mettre à jour le cash_balance de la succursale du CLIENT
+            $client = $account->client;
+            if ($client && $client->branch_id) {
+                $branch = Branch::find($client->branch_id);
+
+                if ($branch) {
+                    if ($adjustmentType === 'increase') {
+                        // Augmentation = argent entre dans la caisse
+                        $branch->increment('cash_balance', $amount);
+                        Log::info("Ajustement INCREASE #{$account->account_id}: +{$amount} HTG à {$branch->name}");
+                    } else {
+                        // Diminution = argent sort de la caisse
+                        $branch->decrement('cash_balance', $amount);
+                        Log::info("Ajustement DECREASE #{$account->account_id}: -{$amount} HTG de {$branch->name}");
+                    }
+                }
+            }
+
             // Créer la transaction d'ajustement
             $adjustmentTransaction = AccountTransaction::create([
                 'account_id' => $account->account_id,
@@ -142,8 +160,7 @@ class AccountTransactionAdjustmentController extends Controller
                 'status' => 'ACTIVE',
             ]);
 
-            // L'Observer mettra à jour automatiquement le cash_balance de la branche
-            // car il traite AJUSTEMENT comme un PAIEMENT (increase) ou RETRAIT (decrease)
+            Log::info("Transaction ajustement #{$adjustmentTransaction->id} créée avec mise à jour de la succursale");
 
             DB::commit();
 

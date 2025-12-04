@@ -10,13 +10,11 @@ class PlanMontant extends Model
 
     protected $fillable = [
         'plan_id',
-        'montant',
-        'interet',
+        'montant_par_jour',
     ];
 
     protected $casts = [
-        'montant' => 'decimal:2',
-        'interet' => 'decimal:2',
+        'montant_par_jour' => 'integer',
     ];
 
     /**
@@ -28,11 +26,11 @@ class PlanMontant extends Model
     }
 
     /**
-     * Calculer le montant total avec intérêt
+     * Calculer le montant total prévu (montant_par_jour * durée du plan)
      */
-    public function getTotalAvecInteretAttribute()
+    public function getTotalPrevuAttribute()
     {
-        return $this->montant + $this->interet;
+        return $this->montant_par_jour * ($this->plan->duree ?? 0);
     }
 
     /**
@@ -40,7 +38,7 @@ class PlanMontant extends Model
      */
     public function getFormattedAmountAttribute()
     {
-        return number_format($this->montant, 2, ',', ' ') . ' HTG';
+        return number_format($this->montant_par_jour, 0, ',', ' ') . ' HTG/jour';
     }
 
     /**
@@ -48,7 +46,7 @@ class PlanMontant extends Model
      */
     public function getDescriptionAttribute()
     {
-        $total = $this->total_avec_interet;
-        return number_format($this->montant, 2, ',', ' ') . " HTG + " . number_format($this->interet, 2, ',', ' ') . " HTG intérêt = " . number_format($total, 2, ',', ' ') . " HTG";
+        $totalPrevu = $this->total_prevu;
+        return number_format($this->montant_par_jour, 0, ',', ' ') . " HTG/jour → Total: " . number_format($totalPrevu, 0, ',', ' ') . " HTG";
     }
 }
