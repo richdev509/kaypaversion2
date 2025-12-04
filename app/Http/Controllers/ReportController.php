@@ -107,8 +107,9 @@ class ReportController extends Controller
             'details' => [],
         ];
 
-        // Base query: filtrer par branche via created_by
-        $baseQuery = AccountTransaction::whereBetween('created_at', [$startDate, $endDate->endOfDay()]);
+        // Base query: filtrer par branche via created_by et exclure les transactions annulées
+        $baseQuery = AccountTransaction::whereBetween('created_at', [$startDate, $endDate->endOfDay()])
+            ->where('status', '!=', 'CANCELLED');
 
         if ($branchId) {
             $baseQuery->whereHas('creator', function($q) use ($branchId) {
@@ -116,10 +117,10 @@ class ReportController extends Controller
             });
         }
 
-        // Rapport sur les dépôts
+        // Rapport sur les dépôts (incluant ajustements positifs)
         if (in_array($type, ['deposit', 'all'])) {
             $depositsQuery = clone $baseQuery;
-            $depositsQuery->where('type', AccountTransaction::TYPE_PAIEMENT);
+            $depositsQuery->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT']);
 
             $depositsByDate = clone $depositsQuery;
             $recentDeposits = clone $depositsQuery;
@@ -139,17 +140,17 @@ class ReportController extends Controller
             ];
         }
 
-        // Rapport sur les retraits
+        // Rapport sur les retraits (incluant ajustements négatifs)
         if (in_array($type, ['withdrawal', 'all'])) {
             $withdrawalsQuery = clone $baseQuery;
-            $withdrawalsQuery->where('type', AccountTransaction::TYPE_RETRAIT);
+            $withdrawalsQuery->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT']);
 
             $withdrawalsByDate = clone $withdrawalsQuery;
             $recentWithdrawals = clone $withdrawalsQuery;
 
             $data['withdrawals'] = [
                 'total_count' => $withdrawalsQuery->count(),
-                'total_amount' => $withdrawalsQuery->sum('amount'),
+                'total_amount' => abs($withdrawalsQuery->sum('amount')),
                 'by_date' => $withdrawalsByDate->selectRaw('DATE(created_at) as date, COUNT(*) as count, SUM(amount) as total')
                     ->groupBy('date')
                     ->orderBy('date', 'asc')
@@ -180,7 +181,8 @@ class ReportController extends Controller
     private function getDepositsByBranch($startDate, $endDate, $branchId = null)
     {
         $query = AccountTransaction::whereBetween('account_transactions.created_at', [$startDate, $endDate->endOfDay()])
-            ->where('type', AccountTransaction::TYPE_PAIEMENT)
+            ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT'])
+            ->where('account_transactions.status', '!=', 'CANCELLED')
             ->join('users', 'account_transactions.created_by', '=', 'users.id')
             ->join('branches', 'users.branch_id', '=', 'branches.id')
             ->selectRaw('branches.id, branches.name, COUNT(*) as count, SUM(account_transactions.amount) as total')
@@ -200,7 +202,8 @@ class ReportController extends Controller
     private function getWithdrawalsByBranch($startDate, $endDate, $branchId = null)
     {
         $query = AccountTransaction::whereBetween('account_transactions.created_at', [$startDate, $endDate->endOfDay()])
-            ->where('type', AccountTransaction::TYPE_RETRAIT)
+            ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])
+            ->where('account_transactions.status', '!=', 'CANCELLED')
             ->join('users', 'account_transactions.created_by', '=', 'users.id')
             ->join('branches', 'users.branch_id', '=', 'branches.id')
             ->selectRaw('branches.id, branches.name, COUNT(*) as count, SUM(account_transactions.amount) as total')
@@ -222,11 +225,13 @@ class ReportController extends Controller
         $query = AccountTransaction::whereBetween('created_at', [$startDate, $endDate->endOfDay()])
             ->with(['account', 'client', 'creator.branch']);
 
-        // Filtrer par type
+        // Filtrer par type (incluant ajustements) et exclure les annulées
+        $query->where('status', '!=', 'CANCELLED');
+
         if ($type === 'deposit') {
-            $query->where('type', AccountTransaction::TYPE_PAIEMENT);
+            $query->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT']);
         } elseif ($type === 'withdrawal') {
-            $query->where('type', AccountTransaction::TYPE_RETRAIT);
+            $query->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT']);
         }
 
         // Filtrer par branche via created_by

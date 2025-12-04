@@ -100,10 +100,27 @@
                                         {{ $transaction->id_transaction }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                            {{ $transaction->type === 'PAIEMENT' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ $transaction->type }}
-                                        </span>
+                                        @if($transaction->type === 'PAIEMENT')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                DÉPÔT
+                                            </span>
+                                        @elseif($transaction->type === 'RETRAIT')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                RETRAIT
+                                            </span>
+                                        @elseif($transaction->type === 'AJUSTEMENT-DEPOT')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                AJUSTEMENT +
+                                            </span>
+                                        @elseif($transaction->type === 'AJUSTEMENT-RETRAIT')
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                AJUSTEMENT -
+                                            </span>
+                                        @else
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                {{ $transaction->type }}
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $transaction->client ? $transaction->client->full_name : 'N/A' }}
@@ -112,8 +129,8 @@
                                         {{ $transaction->account ? $transaction->account->account_number : 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium
-                                        {{ $transaction->type === 'PAIEMENT' ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ number_format($transaction->amount, 2) }} HTG
+                                        {{ in_array($transaction->type, ['PAIEMENT', 'AJUSTEMENT-DEPOT']) ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ number_format(abs($transaction->amount), 2) }} HTG
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $transaction->creator && $transaction->creator->branch ? $transaction->creator->branch->name : 'N/A' }}
