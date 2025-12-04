@@ -20,7 +20,8 @@ class Account extends Model
         'montant_dispo_retrait',
         'withdraw',
         'retrait_status',
-        'credit_locked'
+        'credit_locked',
+        'is_from_parrainage'
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class Account extends Model
         'withdraw' => 'decimal:2',
         'retrait_status' => 'boolean',
         'credit_locked' => 'float',
+        'is_from_parrainage' => 'boolean',
     ];
 
     protected $appends = ['solde_virtuel'];
