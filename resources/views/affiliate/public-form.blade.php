@@ -57,10 +57,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label for="prenom" class="block text-sm font-semibold text-gray-700 mb-2">Prénom *</label>
-                            <input 
-                                type="text" 
-                                name="prenom" 
-                                id="prenom" 
+                            <input
+                                type="text"
+                                name="prenom"
+                                id="prenom"
                                 value="{{ old('prenom') }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 placeholder="Jean"
@@ -70,10 +70,10 @@
 
                         <div>
                             <label for="nom" class="block text-sm font-semibold text-gray-700 mb-2">Nom *</label>
-                            <input 
-                                type="text" 
-                                name="nom" 
-                                id="nom" 
+                            <input
+                                type="text"
+                                name="nom"
+                                id="nom"
                                 value="{{ old('nom') }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 placeholder="Dupont"
@@ -84,10 +84,10 @@
 
                     <div class="mb-4">
                         <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
-                        <input 
-                            type="email" 
-                            name="email" 
-                            id="email" 
+                        <input
+                            type="email"
+                            name="email"
+                            id="email"
                             value="{{ old('email') }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             placeholder="votre@email.com"
@@ -98,10 +98,10 @@
 
                     <div class="mb-4">
                         <label for="telephone" class="block text-sm font-semibold text-gray-700 mb-2">Téléphone *</label>
-                        <input 
-                            type="tel" 
-                            name="telephone" 
-                            id="telephone" 
+                        <input
+                            type="tel"
+                            name="telephone"
+                            id="telephone"
                             value="{{ old('telephone') }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             placeholder="+509 XXXX-XXXX"
@@ -111,10 +111,10 @@
 
                     <div class="mb-6">
                         <label for="whatsapp" class="block text-sm font-semibold text-gray-700 mb-2">WhatsApp (optionnel)</label>
-                        <input 
-                            type="tel" 
-                            name="whatsapp" 
-                            id="whatsapp" 
+                        <input
+                            type="tel"
+                            name="whatsapp"
+                            id="whatsapp"
                             value="{{ old('whatsapp') }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             placeholder="+509 XXXX-XXXX"
@@ -122,8 +122,8 @@
                         <p class="text-xs text-gray-500 mt-1">Nous vous contacterons via WhatsApp si fourni</p>
                     </div>
 
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-200 shadow-lg"
                     >
                         Soumettre ma Demande

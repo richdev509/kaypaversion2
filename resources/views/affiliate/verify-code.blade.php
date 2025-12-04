@@ -52,10 +52,10 @@
                         <label for="code" class="block text-sm font-semibold text-gray-700 mb-2 text-center">
                             Code de Vérification
                         </label>
-                        <input 
-                            type="text" 
-                            name="code" 
-                            id="code" 
+                        <input
+                            type="text"
+                            name="code"
+                            id="code"
                             maxlength="4"
                             class="w-full px-4 py-4 text-center text-2xl font-bold tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             placeholder="0000"
@@ -64,8 +64,8 @@
                         >
                     </div>
 
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg"
                     >
                         Vérifier

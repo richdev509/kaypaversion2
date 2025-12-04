@@ -38,15 +38,16 @@ class AffiliateController extends Controller
             });
         }
 
-        $affiliates = $query->latest()->paginate(20);
+        // Charger le nombre de clients parrainés pour chaque affilié
+        $affiliates = $query->withCount('clients')->latest()->paginate(20);
 
         // Statistiques
         $stats = [
             'total' => Affiliate::count(),
             'en_attente' => Affiliate::where('status', 'en_attente')->count(),
             'approuve' => Affiliate::where('status', 'approuve')->count(),
-            'total_parrainages' => Parrainage::count(),
-            'total_bonus' => Parrainage::sum('bonus_gagne'),
+            'total_parrainages' => Client::whereNotNull('affiliate_id')->count(),
+            'total_bonus' => Affiliate::sum('solde_bonus'),
         ];
 
         return view('affiliates.index', compact('affiliates', 'stats'));
@@ -58,16 +59,17 @@ class AffiliateController extends Controller
     public function show(Affiliate $affiliate)
     {
         $affiliate->load([
+            'clients',
             'parrainages.client',
             'parrainages.account',
             'paiements.effectuePar'
         ]);
 
         $stats = [
-            'total_parrainages' => $affiliate->parrainages()->count(),
-            'parrainages_valides' => $affiliate->parrainages()->valide()->count(),
-            'parrainages_payes' => $affiliate->parrainages()->paye()->count(),
-            'total_gagne' => $affiliate->parrainages()->sum('bonus_gagne'),
+            'total_parrainages' => $affiliate->clients()->count(),
+            'parrainages_valides' => $affiliate->parrainages()->where('status', 'valide')->count(),
+            'parrainages_payes' => $affiliate->parrainages()->where('status', 'paye')->count(),
+            'total_gagne' => $affiliate->solde_bonus + $affiliate->paiements()->sum('montant'), // Solde actuel + déjà payé
             'total_paye' => $affiliate->paiements()->sum('montant'),
         ];
 

@@ -168,6 +168,34 @@ class AccountController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
+            // ===== SYSTÈME DE PARRAINAGE =====
+            // Vérifier si le client a été parrainé et si c'est son PREMIER compte
+            if ($client->affiliate_id && $client->accounts()->count() === 1) {
+                $affiliate = \App\Models\Affiliate::find($client->affiliate_id);
+
+                if ($affiliate && $affiliate->status === 'approuve') {
+                    // Créer l'enregistrement du parrainage
+                    \App\Models\Parrainage::create([
+                        'affiliate_id' => $affiliate->id,
+                        'client_id' => $client->id,
+                        'account_id' => $account->id,
+                        'code_utilise' => $client->code_parrain,
+                        'bonus_gagne' => 25,
+                        'status' => 'valide',
+                    ]);
+
+                    // Incrémenter le solde de l'affilié
+                    $affiliate->increment('solde_bonus', 25);
+
+                    // Incrémenter le compteur de parrainages
+                    $affiliate->increment('nombre_parrainages');
+
+                    // Marquer le compte comme provenant d'un parrainage
+                    $account->update(['is_from_parrainage' => true]);
+                }
+            }
+            // ===== FIN SYSTÈME DE PARRAINAGE =====
+
             DB::commit();
 
             return redirect()

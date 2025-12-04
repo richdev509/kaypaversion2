@@ -50,7 +50,7 @@ return new class extends Migration
             $table->foreign('affiliate_id')->references('id')->on('affiliates')->cascadeOnDelete();
             // Pas de foreign key pour client_id et account_id car types incompatibles
             $table->foreign('paye_by')->references('id')->on('users')->nullOnDelete();
-            
+
             $table->index('client_id');
             $table->index('account_id');
         });

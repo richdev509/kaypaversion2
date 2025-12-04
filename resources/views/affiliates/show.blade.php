@@ -212,41 +212,39 @@
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Client</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Compte</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Client ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nom Complet</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Téléphone</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Comptes</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Bonus</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Statut</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date Inscription</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($affiliate->parrainages as $parrainage)
+                                @forelse($affiliate->clients as $client)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $parrainage->client->full_name ?? 'N/A' }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        {{ $client->client_id }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $parrainage->account->account_number ?? 'Pas encore ouvert' }}
+                                        {{ $client->first_name }} {{ $client->last_name }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                        {{ $client->phone }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                        {{ $client->accounts->count() }} compte(s)
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                                        {{ number_format($parrainage->bonus_gagne, 2) }} GDS
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($parrainage->status === 'en_attente')
-                                            <span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">En Attente</span>
-                                        @elseif($parrainage->status === 'valide')
-                                            <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">Validé</span>
-                                        @else
-                                            <span class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">Payé</span>
-                                        @endif
+                                        25.00 GDS
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $parrainage->created_at->format('d/m/Y') }}
+                                        {{ $client->created_at->format('d/m/Y') }}
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">Aucun parrainage</td>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">Aucun client parrainé</td>
                                 </tr>
                                 @endforelse
                             </tbody>

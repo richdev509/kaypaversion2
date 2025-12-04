@@ -214,6 +214,29 @@
                                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
+
+                                <!-- Code de Parrainage (optionnel) -->
+                                <div class="md:col-span-2">
+                                    <label for="code_parrain" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Code de Parrainage (optionnel)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="code_parrain"
+                                        name="code_parrain"
+                                        value="{{ old('code_parrain') }}"
+                                        placeholder="AFFXXXXXX"
+                                        maxlength="9"
+                                        class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                    >
+                                    <p id="code-parrain-validation" class="mt-1 text-sm hidden"></p>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        💡 Si ce client a été recommandé par un partenaire affilié, saisissez le code de parrainage ici.
+                                    </p>
+                                    @error('code_parrain')
+                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
 
@@ -345,6 +368,7 @@
                                                     placeholder="ABC1234567"
                                                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                                                 >
+                                                <p id="nu-validation" class="mt-1 text-sm hidden"></p>
                                             </div>
                                             <div>
                                                 <label for="nui_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -359,6 +383,7 @@
                                                     placeholder="0123456789"
                                                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                                                 >
+                                                <p id="nui-validation" class="mt-1 text-sm hidden"></p>
                                             </div>
                                         </div>
                                     </div>
@@ -756,15 +781,105 @@
         // 5. VALIDATION CLIENT-SIDE AMÉLIORÉE
         // ==========================================
 
+        // Variables de validation pour tous les champs
+        let nuIsValid = true;
+        let nuiIsValid = true;
+
         // Limiter NIU à 10 chiffres uniquement
-        document.getElementById('nui_number')?.addEventListener('input', function(e) {
-            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
-        });
+        const nuiInput = document.getElementById('nui_number');
+        const nuiValidation = document.getElementById('nui-validation');
+        let nuiTimeout;
+
+        if (nuiInput) {
+            nuiInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                const value = e.target.value;
+
+                clearTimeout(nuiTimeout);
+
+                if (value.length === 10) {
+                    nuiTimeout = setTimeout(() => {
+                        checkDocumentUnique('nui_number', value, nuiValidation, 'nui');
+                    }, 500);
+                } else if (value.length > 0 && value.length < 10) {
+                    nuiValidation.textContent = 'Le NIU doit contenir exactement 10 chiffres';
+                    nuiValidation.className = 'mt-1 text-sm text-orange-600 dark:text-orange-400';
+                    nuiValidation.classList.remove('hidden');
+                    nuiIsValid = false;
+                    updateSubmitButton();
+                } else {
+                    nuiValidation.classList.add('hidden');
+                    nuiIsValid = true;
+                    updateSubmitButton();
+                }
+            });
+        }
 
         // Numéro carte: 10 caractères alphanumériques
-        document.getElementById('nu_number')?.addEventListener('input', function(e) {
-            e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10).toUpperCase();
-        });
+        const nuInput = document.getElementById('nu_number');
+        const nuValidation = document.getElementById('nu-validation');
+        let nuTimeout;
+
+        if (nuInput) {
+            nuInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10).toUpperCase();
+                const value = e.target.value;
+
+                clearTimeout(nuTimeout);
+
+                if (value.length === 10) {
+                    nuTimeout = setTimeout(() => {
+                        checkDocumentUnique('nu_number', value, nuValidation, 'nu');
+                    }, 500);
+                } else if (value.length > 0 && value.length < 10) {
+                    nuValidation.textContent = 'Le numéro de carte doit contenir exactement 10 caractères';
+                    nuValidation.className = 'mt-1 text-sm text-orange-600 dark:text-orange-400';
+                    nuValidation.classList.remove('hidden');
+                    nuIsValid = false;
+                    updateSubmitButton();
+                } else {
+                    nuValidation.classList.add('hidden');
+                    nuIsValid = true;
+                    updateSubmitButton();
+                }
+            });
+        }
+
+        // Fonction pour vérifier l'unicité des documents
+        function checkDocumentUnique(field, value, element, fieldType) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+
+            fetch('/clients/check-document', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken ? csrfToken.content : '',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    field: field,
+                    value: value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                element.textContent = data.message;
+                if (data.available) {
+                    element.className = 'mt-1 text-sm text-green-600 dark:text-green-400';
+                    if (fieldType === 'nu') nuIsValid = true;
+                    if (fieldType === 'nui') nuiIsValid = true;
+                } else {
+                    element.className = 'mt-1 text-sm text-red-600 dark:text-red-400';
+                    if (fieldType === 'nu') nuIsValid = false;
+                    if (fieldType === 'nui') nuiIsValid = false;
+                }
+                element.classList.remove('hidden');
+                updateSubmitButton();
+            })
+            .catch(err => {
+                console.error('Erreur vérification document:', err);
+            });
+        }
 
         // ==========================================
         // 6. FORMATAGE ET VALIDATION TÉLÉPHONE (8 chiffres)
@@ -831,6 +946,60 @@
         });
 
         // ==========================================
+        // 7.5. VALIDATION CODE PARRAINAGE EN TEMPS RÉEL
+        // ==========================================
+        const codeParrainInput = document.getElementById('code_parrain');
+        const codeParrainValidation = document.getElementById('code-parrain-validation');
+        let codeParrainTimeout;
+        let codeParrainIsValid = true; // Par défaut valide (optionnel)
+
+        if (codeParrainInput) {
+            codeParrainInput.addEventListener('input', function(e) {
+                // Convertir en majuscules
+                e.target.value = e.target.value.toUpperCase();
+                const code = e.target.value.trim();
+
+                clearTimeout(codeParrainTimeout);
+
+                if (code.length > 0) {
+                    codeParrainTimeout = setTimeout(() => {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+
+                        fetch('/clients/check-code-parrain', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken ? csrfToken.content : '',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ code: code })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            codeParrainValidation.textContent = data.message;
+                            if (data.valid) {
+                                codeParrainValidation.className = 'mt-1 text-sm text-green-600 dark:text-green-400';
+                                codeParrainIsValid = true;
+                            } else {
+                                codeParrainValidation.className = 'mt-1 text-sm text-red-600 dark:text-red-400';
+                                codeParrainIsValid = false;
+                            }
+                            codeParrainValidation.classList.remove('hidden');
+                            updateSubmitButton();
+                        })
+                        .catch(err => {
+                            console.error('Erreur vérification code parrain:', err);
+                        });
+                    }, 500);
+                } else {
+                    codeParrainValidation.classList.add('hidden');
+                    codeParrainIsValid = true;
+                    updateSubmitButton();
+                }
+            });
+        }
+
+        // ==========================================
         // 8. FONCTION DE VÉRIFICATION UNICITÉ AJAX
         // ==========================================
         function checkFieldUnique(field, value, element, fieldType) {
@@ -872,7 +1041,7 @@
         // 9. BLOQUER SOUMISSION SI VALIDATION ÉCHOUE
         // ==========================================
         function updateSubmitButton() {
-            if (!phoneIsValid || !emailIsValid) {
+            if (!phoneIsValid || !emailIsValid || !codeParrainIsValid || !nuIsValid || !nuiIsValid) {
                 submitBtn.disabled = true;
                 submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
@@ -887,11 +1056,14 @@
 
         // Bloquer soumission du formulaire si validation échoue
         document.querySelector('form').addEventListener('submit', function(e) {
-            if (!phoneIsValid || !emailIsValid) {
+            if (!phoneIsValid || !emailIsValid || !codeParrainIsValid || !nuIsValid || !nuiIsValid) {
                 e.preventDefault();
                 alert('⚠️ Veuillez corriger les erreurs avant de soumettre le formulaire:\n\n' +
                       (!phoneIsValid ? '- Le numéro de téléphone est déjà utilisé ou invalide\n' : '') +
-                      (!emailIsValid ? '- L\'adresse email est déjà utilisée\n' : ''));
+                      (!emailIsValid ? '- L\'adresse email est déjà utilisée\n' : '') +
+                      (!codeParrainIsValid ? '- Le code de parrainage est invalide\n' : '') +
+                      (!nuIsValid ? '- Le numéro de carte est déjà utilisé\n' : '') +
+                      (!nuiIsValid ? '- Le NIU est déjà utilisé\n' : ''));
                 return false;
             }
         });

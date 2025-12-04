@@ -103,6 +103,7 @@ class ClientController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'commune_id' => 'nullable|exists:communes,id',
             'city_id' => 'nullable|exists:cities,id',
+            'code_parrain' => 'nullable|string|max:9',
         ]);
 
         // Utiliser birth_date si date_naissance est vide
@@ -184,6 +185,20 @@ class ClientController extends Controller
 
         // Assigner automatiquement la branche de l'utilisateur connecté
         $validated['branch_id'] = Auth::user()->branch_id;
+
+        // Vérifier et associer le code de parrainage si fourni
+        if (!empty($validated['code_parrain'])) {
+            $affiliate = \App\Models\Affiliate::where('code_parrain', $validated['code_parrain'])
+                ->where('status', 'approuve')
+                ->first();
+
+            if ($affiliate) {
+                $validated['affiliate_id'] = $affiliate->id;
+            } else {
+                // Si le code n'existe pas, ne pas l'enregistrer
+                unset($validated['code_parrain']);
+            }
+        }
 
         $client = Client::create($validated);
 
@@ -401,6 +416,72 @@ class ClientController extends Controller
         return response()->json([
             'available' => !$exists,
             'message' => $exists ? "Ce {$field} est déjà utilisé par un autre client" : "Ce {$field} est disponible"
+        ]);
+    }
+
+    /**
+     * Vérifier si un code de parrainage existe et est valide
+     */
+    public function checkCodeParrain(Request $request)
+    {
+        $code = $request->input('code');
+
+        if (empty($code)) {
+            return response()->json(['valid' => true, 'message' => '']);
+        }
+
+        $affiliate = \App\Models\Affiliate::where('code_parrain', $code)
+            ->where('status', 'approuve')
+            ->first();
+
+        if ($affiliate) {
+            return response()->json([
+                'valid' => true,
+                'message' => "✓ Code valide - Partenaire: {$affiliate->nom_complet}"
+            ]);
+        } else {
+            return response()->json([
+                'valid' => false,
+                'message' => '✗ Code de parrainage invalide ou inactif'
+            ]);
+        }
+    }
+
+    /**
+     * Vérifier si un document d'identité existe déjà
+     */
+    public function checkDocument(Request $request)
+    {
+        $field = $request->input('field'); // 'nu_number' ou 'nui_number'
+        $value = $request->input('value');
+        $clientId = $request->input('client_id'); // Pour édition (ignorer l'enregistrement actuel)
+
+        if (empty($field) || empty($value)) {
+            return response()->json(['available' => true, 'message' => '']);
+        }
+
+        // Mapping des champs selon le type
+        $dbField = $field;
+        if ($field === 'nu_number') {
+            $dbField = 'numero_carte'; // ou 'document_id_number'
+        } elseif ($field === 'nui_number') {
+            $dbField = 'id_nif_cin';
+        }
+
+        $query = Client::where($dbField, $value);
+
+        // Si on édite un client existant, l'ignorer
+        if ($clientId) {
+            $query->where('id', '!=', $clientId);
+        }
+
+        $exists = $query->exists();
+
+        $fieldName = $field === 'nu_number' ? 'numéro de carte' : 'NIU';
+
+        return response()->json([
+            'available' => !$exists,
+            'message' => $exists ? "Ce {$fieldName} est déjà utilisé par un autre client" : "Ce {$fieldName} est disponible"
         ]);
     }
 

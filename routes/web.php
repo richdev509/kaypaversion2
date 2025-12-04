@@ -61,6 +61,8 @@ Route::middleware('auth')->group(function () {
 
     // Routes AJAX pour vérification unicité
     Route::post('/clients/check-unique', [\App\Http\Controllers\ClientController::class, 'checkUnique'])->name('clients.check-unique');
+    Route::post('/clients/check-code-parrain', [\App\Http\Controllers\ClientController::class, 'checkCodeParrain'])->name('clients.check-code-parrain');
+    Route::post('/clients/check-document', [\App\Http\Controllers\ClientController::class, 'checkDocument'])->name('clients.check-document');
 
     // Routes Comptes
     Route::resource('accounts', \App\Http\Controllers\AccountController::class);

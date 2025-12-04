@@ -52,8 +52,8 @@
                     </p>
                 </div>
 
-                <a 
-                    href="{{ route('home') }}" 
+                <a
+                    href="{{ route('home') }}"
                     class="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition text-center"
                 >
                     Retour à l'Accueil

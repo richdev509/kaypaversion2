@@ -40,7 +40,9 @@ class Client extends Model
         'address',
         'password',
         'password_reset',
-        'area_code'
+        'area_code',
+        'code_parrain',
+        'affiliate_id'
     ];
 
     protected $casts = [
@@ -111,6 +113,14 @@ class Client extends Model
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Relation: Client parrainé par un affilié
+     */
+    public function affiliate()
+    {
+        return $this->belongsTo(\App\Models\Affiliate::class, 'affiliate_id');
     }
 
     /**

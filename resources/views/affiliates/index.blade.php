@@ -107,17 +107,17 @@
                 <div class="p-6">
                     <form method="GET" action="{{ route('affiliates.index') }}" class="flex gap-4">
                         <div class="flex-1">
-                            <input 
-                                type="text" 
-                                name="search" 
+                            <input
+                                type="text"
+                                name="search"
                                 value="{{ request('search') }}"
                                 class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                                 placeholder="Rechercher par email, code, nom, téléphone..."
                             >
                         </div>
                         <div>
-                            <select 
-                                name="status" 
+                            <select
+                                name="status"
                                 class="rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                             >
                                 <option value="">Tous les statuts</option>
@@ -196,7 +196,7 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $affiliate->nombre_parrainages }}
+                                        {{ $affiliate->clients_count ?? 0 }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
                                         {{ number_format($affiliate->solde_bonus, 2) }} GDS
