@@ -7,6 +7,7 @@ use App\Models\AccountTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Services\AccountTransactionService;
 
 class WithdrawalController extends Controller
@@ -68,16 +69,29 @@ class WithdrawalController extends Controller
         DB::beginTransaction();
 
         try {
+            Log::info("=== DÉBUT RETRAIT ===", [
+                'account_id' => $account->account_id,
+                'montant' => $montant,
+                'solde_actuel' => $soldeActuel,
+                'method' => $request->method
+            ]);
+
             // Déterminer le type de retrait
             $isTotal = ($montant == $soldeActuel);
             $mode = $isTotal ? 'total' : 'partiel';
+
+            Log::info("Type de retrait: {$mode}");
 
             // Calculer le nouveau solde (simple déduction)
             $service = new AccountTransactionService();
             $amountAfter = $service->handleTransaction($account->account_id, $montant, 'withdraw');
 
+            Log::info("Nouveau solde calculé: {$amountAfter}");
+
             // Mettre à jour le compte
             $account->update(['amount_after' => $amountAfter]);
+
+            Log::info("Compte mis à jour");
 
             // Créer l'entrée dans account_transactions (source unique pour tous les retraits)
             $transaction = AccountTransaction::create([
@@ -91,6 +105,8 @@ class WithdrawalController extends Controller
                 'created_by' => Auth::id(),
                 'note' => $request->note ?? "Retrait {$mode} de " . number_format($montant, 2) . " HTG"
             ]);
+
+            Log::info("Transaction créée", ['transaction_id' => $transaction->id]);
 
             // Clôturer le compte si retrait total ou solde à zéro
             if ($isTotal || $amountAfter <= 0) {
