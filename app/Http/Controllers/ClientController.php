@@ -381,10 +381,10 @@ class ClientController extends Controller
                 'path_back' => $path_back,
                 'path_selfie' => $path_selfie,
 
-                // URLs publiques (pour affichage)
-                'url_front' => asset('storage/' . $path_front),
-                'url_back' => asset('storage/' . $path_back),
-                'url_selfie' => asset('storage/' . $path_selfie),
+                // URLs publiques (pour affichage) - Utiliser Storage::url() pour compatibilité serveur
+                'url_front' => Storage::url($path_front),
+                'url_back' => Storage::url($path_back),
+                'url_selfie' => Storage::url($path_selfie),
             ]);
         }
 
