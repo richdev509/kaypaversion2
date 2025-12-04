@@ -128,6 +128,9 @@ class BranchCashController extends Controller
         ->whereDate('created_at', today())
         ->sum('amount');
 
+        // Convertir en valeur absolue car les retraits peuvent être stockés en négatif
+        $todayWithdrawals = abs($todayWithdrawals);
+
         // Transferts du jour
         $todayTransfersOut = FundMovement::where('source_branch_id', $branchId)
             ->where('status', 'APPROVED')
@@ -154,6 +157,9 @@ class BranchCashController extends Controller
         ->whereMonth('created_at', now()->month)
         ->sum('amount');
 
+        // Convertir en valeur absolue
+        $monthWithdrawals = abs($monthWithdrawals);
+
         return [
             'current_balance' => $currentBalance,
             'today_deposits' => $todayDeposits,
@@ -163,6 +169,13 @@ class BranchCashController extends Controller
             'today_net' => $todayDeposits - $todayWithdrawals + $todayTransfersIn - $todayTransfersOut,
             'month_deposits' => $monthDeposits,
             'month_withdrawals' => $monthWithdrawals,
+
+            // DEBUG - À supprimer après test
+            'debug_info' => [
+                'withdrawals_sum' => $todayWithdrawals,
+                'deposits_sum' => $todayDeposits,
+                'balance' => $currentBalance,
+            ]
         ];
     }
 

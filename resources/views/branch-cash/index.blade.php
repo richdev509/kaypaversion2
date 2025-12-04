@@ -43,6 +43,16 @@
             </div>
 
             @if($branch)
+
+            <!-- DEBUG TEMPORAIRE - À SUPPRIMER -->
+            <div class="mb-4 p-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-lg">
+                <strong>DEBUG:</strong><br>
+                today_deposits = {{ $stats['today_deposits'] }}<br>
+                today_withdrawals = {{ $stats['today_withdrawals'] }}<br>
+                current_balance = {{ $stats['current_balance'] }}<br>
+                today_net = {{ $stats['today_net'] }}
+            </div>
+
             <!-- Statistiques -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <!-- Solde Caisse Actuel -->
