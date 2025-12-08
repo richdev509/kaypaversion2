@@ -113,8 +113,9 @@
 
             document.body.innerHTML = printContent;
             window.print();
-            document.body.innerHTML = originalContent;
-            location.reload(); // Recharger pour restaurer les scripts
+
+            // Rediriger vers le dashboard au lieu de recharger
+            window.location.href = '{{ route("dashboard") }}';
         }
     </script>
 </x-app-layout>

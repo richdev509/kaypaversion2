@@ -112,6 +112,9 @@ Route::middleware('auth')->group(function () {
     // Routes 2FA (Authentification à deux facteurs)
     Route::prefix('two-factor')->name('two-factor.')->group(function () {
         Route::get('/enable', [\App\Http\Controllers\TwoFactorController::class, 'enable'])->name('enable');
+        Route::get('/confirm', function () {
+            return redirect()->route('two-factor.enable')->with('info', 'Veuillez scanner le QR code et soumettre le formulaire.');
+        });
         Route::post('/confirm', [\App\Http\Controllers\TwoFactorController::class, 'confirm'])->name('confirm');
         Route::get('/verify', [\App\Http\Controllers\TwoFactorController::class, 'show'])->name('show')->withoutMiddleware(['auth']);
         Route::post('/verify', [\App\Http\Controllers\TwoFactorController::class, 'verify'])->name('verify')->withoutMiddleware(['auth']);
