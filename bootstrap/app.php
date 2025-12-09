@@ -16,11 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
             '2fa' => \App\Http\Middleware\CheckDeviceAnd2FA::class,
         ]);
 
-        // Middleware global pour gérer l'expiration de session
-        $middleware->web(append: [
-            \App\Http\Middleware\RedirectIfSessionExpired::class,
-        ]);
-
         // Ne PAS appliquer globalement, la vérification est faite au login
         // $middleware->append(\App\Http\Middleware\CheckDeviceAnd2FA::class);
     })
