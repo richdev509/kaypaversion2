@@ -16,6 +16,11 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <!-- Session Manager -->
+        @auth
+        <script src="{{ asset('js/session-manager.js') }}" defer></script>
+        @endauth
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">

@@ -16,9 +16,25 @@ return Application::configure(basePath: dirname(__DIR__))
             '2fa' => \App\Http\Middleware\CheckDeviceAnd2FA::class,
         ]);
 
+        // Middleware global pour gérer l'expiration de session
+        $middleware->web(append: [
+            \App\Http\Middleware\RedirectIfSessionExpired::class,
+        ]);
+
         // Ne PAS appliquer globalement, la vérification est faite au login
         // $middleware->append(\App\Http\Middleware\CheckDeviceAnd2FA::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Gérer l'erreur "Page Expired" (419 - Token CSRF expiré/Session expirée)
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Votre session a expiré. Veuillez vous reconnecter.',
+                    'redirect' => route('login')
+                ], 419);
+            }
+
+            return redirect()->route('login')
+                ->with('info', 'Votre session a expiré. Veuillez vous reconnecter.');
+        });
     })->create();
