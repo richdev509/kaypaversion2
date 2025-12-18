@@ -64,7 +64,7 @@ class DashboardController extends Controller
         // Nombre et montant total des dépôts (paiements)
         $totalPayments = AccountTransaction::where('type', 'PAIEMENT')
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -72,7 +72,7 @@ class DashboardController extends Controller
 
         $totalPaymentsAmount = AccountTransaction::where('type', 'PAIEMENT')
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -81,7 +81,7 @@ class DashboardController extends Controller
         // Nombre et montant total des retraits
         $totalWithdrawals = AccountTransaction::where('type', 'RETRAIT')
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -89,7 +89,7 @@ class DashboardController extends Controller
 
         $totalWithdrawalsAmount = AccountTransaction::where('type', 'RETRAIT')
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -99,7 +99,7 @@ class DashboardController extends Controller
         $todayPayments = AccountTransaction::where('type', 'PAIEMENT')
             ->whereDate('created_at', today())
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -108,7 +108,7 @@ class DashboardController extends Controller
         $todayPaymentsAmount = AccountTransaction::where('type', 'PAIEMENT')
             ->whereDate('created_at', today())
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -118,7 +118,7 @@ class DashboardController extends Controller
         $todayWithdrawals = AccountTransaction::where('type', 'RETRAIT')
             ->whereDate('created_at', today())
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -127,7 +127,7 @@ class DashboardController extends Controller
         $todayWithdrawalsAmount = AccountTransaction::where('type', 'RETRAIT')
             ->whereDate('created_at', today())
             ->when($branchId, function($q) use ($branchId) {
-                $q->whereHas('account.client', function($query) use ($branchId) {
+                $q->whereHas('creator', function($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 });
             })
@@ -181,7 +181,7 @@ class DashboardController extends Controller
             $paymentsCount = AccountTransaction::where('type', 'PAIEMENT')
                 ->whereDate('created_at', $date)
                 ->when($branchId, function($q) use ($branchId) {
-                    $q->whereHas('account.client', function($query) use ($branchId) {
+                    $q->whereHas('creator', function($query) use ($branchId) {
                         $query->where('branch_id', $branchId);
                     });
                 })
@@ -190,7 +190,7 @@ class DashboardController extends Controller
             $withdrawalsCount = AccountTransaction::where('type', 'RETRAIT')
                 ->whereDate('created_at', $date)
                 ->when($branchId, function($q) use ($branchId) {
-                    $q->whereHas('account.client', function($query) use ($branchId) {
+                    $q->whereHas('creator', function($query) use ($branchId) {
                         $query->where('branch_id', $branchId);
                     });
                 })

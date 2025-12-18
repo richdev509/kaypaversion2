@@ -66,6 +66,11 @@
                         👥 Affiliés
                     </x-nav-link>
                     @endif
+                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                    <x-nav-link :href="route('online-payments.index')" :active="request()->routeIs('online-payments.*')">
+                        💳 Paiements Online
+                    </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -170,6 +175,11 @@
             @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
             <x-responsive-nav-link :href="route('affiliates.index')" :active="request()->routeIs('affiliates.*')">
                 👥 Affiliés
+            </x-responsive-nav-link>
+            @endif
+            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+            <x-responsive-nav-link :href="route('online-payments.index')" :active="request()->routeIs('online-payments.*')">
+                💳 Paiements Online
             </x-responsive-nav-link>
             @endif
         </div>

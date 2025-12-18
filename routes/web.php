@@ -159,6 +159,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/{affiliate}/resend-code', [\App\Http\Controllers\AffiliateController::class, 'resendCode'])->name('resend-code');
         Route::post('/{affiliate}/paiement', [\App\Http\Controllers\AffiliateController::class, 'storePaiement'])->name('paiement');
     });
+
+    // Routes Paiements en Ligne (Admin & Comptable uniquement)
+    Route::prefix('online-payments')->name('online-payments.')->middleware(['auth'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\OnlinePaymentController::class, 'index'])->name('index');
+        Route::get('/{transaction}', [\App\Http\Controllers\OnlinePaymentController::class, 'show'])->name('show');
+        Route::get('/export/csv', [\App\Http\Controllers\OnlinePaymentController::class, 'export'])->name('export');
+        Route::get('/api/stats', [\App\Http\Controllers\OnlinePaymentController::class, 'apiStats'])->name('api.stats');
+    });
 });
 
 // Routes publiques pour scan mobile (pas d'authentification requise)

@@ -11,7 +11,7 @@ class AccountTransactionObserver
 {
     /**
      * Handle the AccountTransaction "created" event.
-     * Met à jour automatiquement le cash_balance de la branche du CLIENT
+     * Met à jour automatiquement le cash_balance de la branche de l'AGENT qui a créé la transaction
      */
     public function created(AccountTransaction $transaction): void
     {
@@ -21,25 +21,27 @@ class AccountTransactionObserver
                 return;
             }
 
-            // Récupérer la branche via le CLIENT de la transaction (pas l'utilisateur connecté)
-            $account = $transaction->account;
-            if (!$account) {
-                Log::warning("AccountTransaction {$transaction->id}: Compte introuvable");
+            // Récupérer la branche via l'AGENT qui a créé la transaction (created_by)
+            if (!$transaction->created_by) {
+                Log::warning("AccountTransaction {$transaction->id}: Pas de created_by (transaction online?)");
                 return;
             }
 
-            $client = $account->client;
-            if (!$client || !$client->branch_id) {
-                Log::warning("AccountTransaction {$transaction->id}: Client sans branch_id");
+            $creator = $transaction->creator;
+            if (!$creator || !$creator->branch_id) {
+                Log::warning("AccountTransaction {$transaction->id}: Agent sans branch_id");
                 return;
             }
 
-            $branch = \App\Models\Branch::find($client->branch_id);
+            $branch = \App\Models\Branch::find($creator->branch_id);
 
             if (!$branch) {
-                Log::warning("AccountTransaction {$transaction->id}: Branch {$client->branch_id} introuvable");
+                Log::warning("AccountTransaction {$transaction->id}: Branch {$creator->branch_id} introuvable");
                 return;
             }
+
+            // Récupérer le compte pour la clôture automatique
+            $account = $transaction->account;
 
             // Mettre à jour le cash_balance selon le type de transaction
             if ($transaction->type === 'PAIEMENT' || $transaction->type === 'Paiement initial') {

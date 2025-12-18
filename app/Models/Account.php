@@ -164,10 +164,7 @@ class Account extends Model
      */
     public function getAvailableForWithdrawal(): float
     {
-        if ($this->hasDebt()) {
-            return 0;
-        }
-        // Retrait libre basé sur le solde uniquement
+        // Retrait libre basé sur le solde uniquement (pas de vérification de dette)
         return $this->solde_virtuel;
     }
 

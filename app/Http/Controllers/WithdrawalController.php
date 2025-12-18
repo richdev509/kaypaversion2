@@ -23,12 +23,6 @@ class WithdrawalController extends Controller
                 ->with('error', "Retrait impossible : compte {$account->status}");
         }
 
-        // Vérifier qu'il n'y a pas de dette active
-        if ($account->hasDebt()) {
-            return redirect()->route('accounts.show', $account)
-                ->with('error', "Retrait impossible : une dette de " . number_format($account->withdraw, 2) . " HTG doit d'abord être remboursée.");
-        }
-
         // Vérifier qu'il y a un solde disponible
         if ($account->getAvailableForWithdrawal() <= 0) {
             return redirect()->route('accounts.show', $account)
@@ -51,11 +45,6 @@ class WithdrawalController extends Controller
 
         if ($account->status !== 'actif') {
             return back()->with('error', "Retrait impossible : compte {$account->status}");
-        }
-
-        // Vérifier qu'il n'y a pas de dette active
-        if ($account->hasDebt()) {
-            return back()->with('error', "Retrait impossible : une dette de " . number_format($account->withdraw, 2) . " HTG doit d'abord être remboursée.");
         }
 
         $montant = $request->amount;

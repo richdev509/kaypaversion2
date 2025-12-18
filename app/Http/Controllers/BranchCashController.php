@@ -57,7 +57,8 @@ class BranchCashController extends Controller
         $transactions = collect();
 
         // 1. Transactions clients (Dépôts/Retraits/Ajustements)
-        $clientTransactions = AccountTransaction::whereHas('account.client', function($q) use ($branchId) {
+        // Filtrage par l'agent qui a créé la transaction (created_by)
+        $clientTransactions = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
         ->whereDate('created_at', '>=', now()->subDays(30))
@@ -130,14 +131,15 @@ class BranchCashController extends Controller
         $currentBalance = $branch->cash_balance ?? 0;
 
         // Transactions du jour (incluant ajustements et paiement initial)
-        $todayDeposits = AccountTransaction::whereHas('account.client', function($q) use ($branchId) {
+        // Filtrage par l'agent qui a créé la transaction (created_by)
+        $todayDeposits = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
         ->whereDate('created_at', today())
         ->sum('amount');
 
-        $todayWithdrawals = AccountTransaction::whereHas('account.client', function($q) use ($branchId) {
+        $todayWithdrawals = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])
@@ -159,14 +161,15 @@ class BranchCashController extends Controller
             ->sum('amount');
 
         // Transactions du mois (incluant ajustements et paiement initial)
-        $monthDeposits = AccountTransaction::whereHas('account.client', function($q) use ($branchId) {
+        // Filtrage par l'agent qui a créé la transaction (created_by)
+        $monthDeposits = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
         ->whereMonth('created_at', now()->month)
         ->sum('amount');
 
-        $monthWithdrawals = AccountTransaction::whereHas('account.client', function($q) use ($branchId) {
+        $monthWithdrawals = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])

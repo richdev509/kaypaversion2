@@ -547,8 +547,6 @@
                                     >
                                         <option value="pending" {{ old('status_kyc', 'pending') == 'pending' ? 'selected' : '' }}>En attente</option>
                                         <option value="verified" {{ old('status_kyc') == 'verified' ? 'selected' : '' }}>Vérifié</option>
-                                        <option value="rejected" {{ old('status_kyc') == 'rejected' ? 'selected' : '' }}>Rejeté</option>
-                                        <option value="not_verified" {{ old('status_kyc') == 'not_verified' ? 'selected' : '' }}>Non vérifié</option>
                                     </select>
                                 </div>
 

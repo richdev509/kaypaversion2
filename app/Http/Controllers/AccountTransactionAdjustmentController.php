@@ -37,12 +37,11 @@ class AccountTransactionAdjustmentController extends Controller
         try {
             Log::info("Début annulation transaction #{$transaction->id}");
 
-            // Inverser l'impact sur le cash_balance de la branche DU CLIENT
-            $account = $transaction->account;
-            $client = $account ? $account->client : null;
+            // Inverser l'impact sur le cash_balance de la branche de l'AGENT qui a créé la transaction
+            $creator = $transaction->creator;
 
-            if ($client && $client->branch_id) {
-                $branch = Branch::find($client->branch_id);
+            if ($creator && $creator->branch_id) {
+                $branch = Branch::find($creator->branch_id);
 
                 if ($transaction->type === 'PAIEMENT') {
                     // Annuler un PAIEMENT = retirer l'argent qui avait été ajouté
@@ -55,6 +54,9 @@ class AccountTransactionAdjustmentController extends Controller
                     Log::info("Annulation RETRAIT #{$transaction->id}: +{$transaction->amount} HTG à {$branch->name}");
                 }
             }
+
+            // Récupérer le compte pour mise à jour du solde
+            $account = $transaction->account;
 
             // Inverser l'impact sur le solde du compte
             if ($account) {
