@@ -26,50 +26,114 @@
                     <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
                         Comptes
                     </x-nav-link>
-                    @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-                    <x-nav-link :href="route('branches.index')" :active="request()->routeIs('branches.*')">
-                        Branches
-                    </x-nav-link>
+
+                    <!-- Menu déroulant Transferts -->
+                    @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+                    <x-dropdown align="top" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-700 transition duration-150 ease-in-out">
+                                <span>💸 Transferts</span>
+                                <svg class="ms-1 h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('transfers.index')">
+                                🔍 Recherche Transfert
+                            </x-dropdown-link>
+                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+                            <x-dropdown-link :href="route('transfers.all')">
+                                📋 Liste Complète
+                            </x-dropdown-link>
+                            @endif
+                            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                            <x-dropdown-link :href="route('transfers.stats')">
+                                📊 Statistiques
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('transfers.reports')">
+                                📈 Rapports (CSV/PDF)
+                            </x-dropdown-link>
+                            @endif
+                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+                            <x-dropdown-link :href="route('transfers.disputes')">
+                                ⚠️ Gestion des Litiges
+                            </x-dropdown-link>
+                            @endif
+                            @if(Auth::user()->isAdmin())
+                            <x-dropdown-link :href="route('transfers.settings')">
+                                ⚙️ Paramètres
+                            </x-dropdown-link>
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
                     @endif
-                    @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
-                        Utilisateurs
-                    </x-nav-link>
-                    @endif
-                    @if(Auth::user()->isAdmin())
-                    <x-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.*')">
-                        🔐 Rôles & Permissions
-                    </x-nav-link>
-                    @endif
+
                     @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
                     <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                         Rapports
                     </x-nav-link>
                     @endif
+
                     @if(Auth::user()->hasPermissionTo('fund-movements.view'))
                     <x-nav-link :href="route('fund-movements.index')" :active="request()->routeIs('fund-movements.*')">
                         Gestion Financière
                     </x-nav-link>
                     @endif
+
                     @if(Auth::user()->hasPermissionTo('branch-cash.view'))
                     <x-nav-link :href="route('branch-cash.index')" :active="request()->routeIs('branch-cash.*')">
-                        💰 Caisse Succursale
+                        💰 Caisse
                     </x-nav-link>
                     @endif
-                    @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
-                    <x-nav-link :href="route('client-access.index')" :active="request()->routeIs('client-access.*')">
-                        🔑 Accès Client
+
+                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                    <x-nav-link :href="route('online-payments.index')" :active="request()->routeIs('online-payments.*')">
+                        💳 Paiements
                     </x-nav-link>
                     @endif
+
                     @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
                     <x-nav-link :href="route('affiliates.index')" :active="request()->routeIs('affiliates.*')">
                         👥 Affiliés
                     </x-nav-link>
                     @endif
-                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
-                    <x-nav-link :href="route('online-payments.index')" :active="request()->routeIs('online-payments.*')">
-                        💳 Paiements Online
+
+                    @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+                    <x-nav-link :href="route('client-access.index')" :active="request()->routeIs('client-access.*')">
+                        🔑 Accès
                     </x-nav-link>
+                    @endif
+
+                    <!-- Menu déroulant Administration -->
+                    @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+                    <x-dropdown align="top" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-700 transition duration-150 ease-in-out">
+                                <span>⚙️ Administration</span>
+                                <svg class="ms-1 h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+                            <x-dropdown-link :href="route('branches.index')">
+                                🏢 Branches
+                            </x-dropdown-link>
+                            @endif
+                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+                            <x-dropdown-link :href="route('users.index')">
+                                👤 Utilisateurs
+                            </x-dropdown-link>
+                            @endif
+                            @if(Auth::user()->isAdmin())
+                            <x-dropdown-link :href="route('admin.roles.index')">
+                                🔐 Rôles & Permissions
+                            </x-dropdown-link>
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
                     @endif
                 </div>
             </div>

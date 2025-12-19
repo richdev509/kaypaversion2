@@ -167,6 +167,37 @@ Route::middleware('auth')->group(function () {
         Route::get('/export/csv', [\App\Http\Controllers\OnlinePaymentController::class, 'export'])->name('export');
         Route::get('/api/stats', [\App\Http\Controllers\OnlinePaymentController::class, 'apiStats'])->name('api.stats');
     });
+
+    // Routes Transferts Locaux
+    Route::prefix('transfers')->name('transfers.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TransferController::class, 'index'])->name('index');
+        Route::get('/all', [\App\Http\Controllers\TransferController::class, 'indexAll'])->name('all');
+        Route::get('/stats', [\App\Http\Controllers\TransferController::class, 'stats'])->name('stats');
+        Route::get('/reports', [\App\Http\Controllers\TransferController::class, 'reports'])->name('reports');
+        Route::get('/reports/excel', [\App\Http\Controllers\TransferController::class, 'exportExcel'])->name('reports.excel');
+        Route::get('/reports/pdf', [\App\Http\Controllers\TransferController::class, 'exportPdf'])->name('reports.pdf');
+        Route::get('/disputes', [\App\Http\Controllers\TransferController::class, 'disputes'])->name('disputes');
+        Route::get('/disputes/{transfer}', [\App\Http\Controllers\TransferController::class, 'showDispute'])->name('disputes.show');
+        Route::post('/{transfer}/dispute', [\App\Http\Controllers\TransferController::class, 'createDispute'])->name('dispute.create');
+        Route::post('/{transfer}/dispute/update', [\App\Http\Controllers\TransferController::class, 'updateDisputeStatus'])->name('dispute.update');
+        Route::get('/settings', [\App\Http\Controllers\TransferController::class, 'settings'])->name('settings');
+        Route::put('/settings', [\App\Http\Controllers\TransferController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/create', [\App\Http\Controllers\TransferController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\TransferController::class, 'store'])->name('store');
+        Route::get('/{transfer}', [\App\Http\Controllers\TransferController::class, 'show'])->name('show');
+        Route::get('/{transfer}/edit', [\App\Http\Controllers\TransferController::class, 'edit'])->name('edit');
+        Route::put('/{transfer}', [\App\Http\Controllers\TransferController::class, 'update'])->name('update');
+        Route::get('/{transfer}/pay', [\App\Http\Controllers\TransferController::class, 'payForm'])->name('pay');
+        Route::post('/{transfer}/pay', [\App\Http\Controllers\TransferController::class, 'pay'])->name('pay.process');
+        Route::post('/{transfer}/cancel', [\App\Http\Controllers\TransferController::class, 'cancel'])->name('cancel');
+        Route::get('/{transfer}/receipt', [\App\Http\Controllers\TransferController::class, 'receipt'])->name('receipt');
+        Route::get('/{transfer}/receipt-sender', [\App\Http\Controllers\TransferController::class, 'receipt'])->name('receipt-sender');
+        Route::get('/{transfer}/receipt-receiver', [\App\Http\Controllers\TransferController::class, 'receiptReceiver'])->name('receipt-receiver');
+
+        // Routes AJAX
+        Route::get('/check/account', [\App\Http\Controllers\TransferController::class, 'checkAccount'])->name('check.account');
+        Route::post('/calculate/fees', [\App\Http\Controllers\TransferController::class, 'calculateFees'])->name('calculate.fees');
+    });
 });
 
 // Routes publiques pour scan mobile (pas d'authentification requise)

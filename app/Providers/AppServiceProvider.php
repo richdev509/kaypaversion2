@@ -6,7 +6,9 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use App\Models\AccountTransaction;
+use App\Models\Transfer;
 use App\Policies\UserPolicy;
+use App\Policies\TransferPolicy;
 use App\Observers\AccountTransactionObserver;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Enregistrer les policies
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Transfer::class, TransferPolicy::class);
 
         // Enregistrer les observers
         AccountTransaction::observe(AccountTransactionObserver::class);
