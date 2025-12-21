@@ -359,7 +359,13 @@
                     document.getElementById('accountInfo').classList.remove('hidden');
                     document.getElementById('clientName').textContent = data.client_name;
                     document.getElementById('clientPhone').textContent = data.phone;
-                    document.getElementById('sender_name').value = data.client_name;
+
+                    // Remplir et verrouiller le nom pour éviter la fraude
+                    const senderNameInput = document.getElementById('sender_name');
+                    senderNameInput.value = data.client_name;
+                    senderNameInput.readOnly = true;
+                    senderNameInput.classList.add('bg-gray-100', 'cursor-not-allowed', 'dark:bg-gray-600');
+
                     document.getElementById('sender_phone').value = data.phone;
                     hasKaypaAccount = true;
                     calculateFees();
@@ -377,6 +383,12 @@
         if (!this.value) {
             hasKaypaAccount = false;
             document.getElementById('accountInfo').classList.add('hidden');
+
+            // Déverrouiller le champ nom si le compte est effacé
+            const senderNameInput = document.getElementById('sender_name');
+            senderNameInput.readOnly = false;
+            senderNameInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'dark:bg-gray-600');
+
             calculateFees();
         }
     });

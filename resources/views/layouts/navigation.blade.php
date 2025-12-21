@@ -127,6 +127,11 @@
                                 👤 Utilisateurs
                             </x-dropdown-link>
                             @endif
+                            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                            <x-dropdown-link :href="route('admin.withdrawals.index')">
+                                💰 Demandes de Retrait
+                            </x-dropdown-link>
+                            @endif
                             @if(Auth::user()->isAdmin())
                             <x-dropdown-link :href="route('admin.roles.index')">
                                 🔐 Rôles & Permissions

@@ -198,6 +198,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/check/account', [\App\Http\Controllers\TransferController::class, 'checkAccount'])->name('check.account');
         Route::post('/calculate/fees', [\App\Http\Controllers\TransferController::class, 'calculateFees'])->name('calculate.fees');
     });
+
+    // Routes Admin pour Demandes de Retrait (Superadmin & Comptable uniquement)
+    Route::prefix('admin/withdrawals')->name('admin.withdrawals.')->middleware(['role:admin|comptable'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'show'])->name('show');
+        Route::post('/{id}/status', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{id}/approve', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'approve'])->name('approve');
+        Route::post('/{id}/reject', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'reject'])->name('reject');
+    });
 });
 
 // Routes publiques pour scan mobile (pas d'authentification requise)

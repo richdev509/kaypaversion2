@@ -31,25 +31,25 @@ class RecalculateBranchCashBalance extends Command
                 continue;
             }
 
-            // Calculer le total des PAIEMENTS (entrées +)
-            $totalPayments = DB::table('account_transactions')
-                ->where('type', 'PAIEMENT')
+            // Calculer le total des ENTRÉES (entrées +)
+            $totalIn = DB::table('account_transactions')
+                ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
                 ->whereIn('created_by', $userIds)
                 ->sum('amount');
 
-            // Calculer le total des RETRAITS (sorties -)
-            $totalWithdrawals = DB::table('account_transactions')
-                ->where('type', 'RETRAIT')
+            // Calculer le total des SORTIES (sorties -)
+            $totalOut = DB::table('account_transactions')
+                ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])
                 ->whereIn('created_by', $userIds)
                 ->sum('amount');
 
             // Calculer le solde net
-            $netBalance = $initialBalance + $totalPayments - $totalWithdrawals;
+            $netBalance = $initialBalance + $totalIn - abs($totalOut);
 
             // Mettre à jour la branche
             $branch->update(['cash_balance' => $netBalance]);
 
-            $this->info("✅ {$branch->name}: {$netBalance} HTG (Paiements: +{$totalPayments}, Retraits: -{$totalWithdrawals})");
+            $this->info("✅ {$branch->name}: {$netBalance} HTG (Entrées: +{$totalIn}, Sorties: -{$totalOut})");
         }
 
         $this->info('');
