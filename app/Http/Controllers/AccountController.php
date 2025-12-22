@@ -21,9 +21,9 @@ class AccountController extends Controller
         $user = Auth::user();
         $query = Account::with(['client', 'plan']);
 
-        // Pour les managers : liste vide par défaut, afficher seulement après recherche
-        if ($user->isManager() && !$request->filled('search') && !$request->filled('status') && !$request->filled('has_debt')) {
-            // Retourner une collection vide pour les managers sans recherche
+        // Pour les managers et agents : liste vide par défaut, afficher seulement après recherche
+        if (($user->isManager() || $user->isAgent()) && !$request->filled('search') && !$request->filled('status') && !$request->filled('has_debt')) {
+            // Retourner une collection vide pour les managers et agents sans recherche
             $accounts = Account::whereRaw('1 = 0')->paginate(20);
         } else {
             // Recherche

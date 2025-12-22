@@ -97,8 +97,8 @@
                 </div>
             </div>
 
-            @if(Auth::user()->isManager() && !request()->filled('search') && !request()->filled('status') && !request()->filled('has_debt'))
-            <!-- Message pour les managers sans recherche -->
+            @if((Auth::user()->isManager() || Auth::user()->isAgent()) && !request()->filled('search') && !request()->filled('status') && !request()->filled('has_debt'))
+            <!-- Message pour les managers et agents sans recherche -->
             <div class="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
                 <div class="flex flex-col items-center justify-center">
                     <svg class="w-16 h-16 text-blue-500 dark:text-blue-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
