@@ -31,7 +31,15 @@
             </div>
             @endif
 
-            @if(!Auth::user()->isAdmin() && Auth::user()->branch)
+            @if(Auth::user()->isAgent())
+            <!-- Message pour les agents -->
+            <div class="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p class="text-sm text-blue-800 dark:text-blue-200">
+                    <i class="fas fa-info-circle"></i>
+                    Vous consultez uniquement les transferts <strong>payés</strong> ou <strong>annulés</strong> de votre branche <strong>{{ Auth::user()->branch->name }}</strong>.
+                </p>
+            </div>
+            @elseif(!Auth::user()->isAdmin() && Auth::user()->branch)
             <!-- Message pour les managers -->
             <div class="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p class="text-sm text-blue-800 dark:text-blue-200">
@@ -41,124 +49,175 @@
             </div>
             @endif
 
-            <!-- Statistiques -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Transferts</dt>
-                                    <dd class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($stats['total']) }}</dd>
-                                </dl>
+            <!-- Statistiques et Filtres sur la même ligne (Admin et Manager uniquement) -->
+            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+                <!-- Statistiques à gauche (4 colonnes) -->
+                <div class="lg:col-span-4">
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg h-full">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Statistiques</h3>
+                            <div class="space-y-4">
+                                <!-- Total Transferts -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                            <svg class="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ml-3 text-sm text-gray-600 dark:text-gray-400">Total</span>
+                                    </div>
+                                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{ number_format($stats['total']) }}</span>
+                                </div>
+
+                                <!-- En Attente -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                                            <svg class="h-4 w-4 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ml-3 text-sm text-gray-600 dark:text-gray-400">En Attente</span>
+                                    </div>
+                                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{ number_format($stats['pending']) }}</span>
+                                </div>
+
+                                <!-- Montant Payé -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                                            <svg class="h-4 w-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ml-3 text-sm text-gray-600 dark:text-gray-400">Montant</span>
+                                    </div>
+                                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{ number_format($stats['total_amount'], 0) }} GDS</span>
+                                </div>
+
+                                <!-- Frais Perçus (Admin uniquement) -->
+                                @if(Auth::user()->isAdmin())
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                                            <svg class="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ml-3 text-sm text-gray-600 dark:text-gray-400">Frais</span>
+                                    </div>
+                                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{ number_format($stats['total_fees'], 0) }} GDS</span>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">En Attente</dt>
-                                    <dd class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($stats['pending']) }}</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Filtres à droite (8 colonnes) -->
+                <div class="lg:col-span-8">
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg h-full">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔍 Filtres</h3>
+                            <form method="GET" action="{{ route('transfers.all') }}">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Statut</label>
+                                        <select name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                            <option value="">Tous</option>
+                                            <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>En attente</option>
+                                            <option value="paid" {{ $status == 'paid' ? 'selected' : '' }}>Payé</option>
+                                            <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Annulé</option>
+                                        </select>
+                                    </div>
 
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Montant Payé</dt>
-                                    <dd class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($stats['total_amount'], 0) }} GDS</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Début</label>
+                                        <input type="date" name="date_debut" value="{{ $dateDebut }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                    </div>
 
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Frais Perçus</dt>
-                                    <dd class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($stats['total_fees'], 0) }} GDS</dd>
-                                </dl>
-                            </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Fin</label>
+                                        <input type="date" name="date_fin" value="{{ $dateFin }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                    </div>
+
+                                    <div class="flex items-end">
+                                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center justify-center gap-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                            </svg>
+                                            Filtrer
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recherche</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" name="search" value="{{ $search }}" placeholder="Numéro, nom, téléphone..." class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                        <a href="{{ route('transfers.all') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition whitespace-nowrap">
+                                            Réinitialiser
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
+            @endif
 
-            <!-- Filtres -->
+            <!-- Filtres (Tous les utilisateurs y compris agents) -->
+            @if(Auth::user()->isAgent())
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('transfers.index') }}" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Statut</label>
-                            <select name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                                <option value="">Tous</option>
-                                <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>En attente</option>
-                                <option value="paid" {{ $status == 'paid' ? 'selected' : '' }}>Payé</option>
-                                <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Annulé</option>
-                            </select>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔍 Filtres</h3>
+                    <form method="GET" action="{{ route('transfers.all') }}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Statut</label>
+                                <select name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                    <option value="">Tous</option>
+                                    <option value="paid" {{ $status == 'paid' ? 'selected' : '' }}>Payé</option>
+                                    <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Annulé</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Début</label>
+                                <input type="date" name="date_debut" value="{{ $dateDebut }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Fin</label>
+                                <input type="date" name="date_fin" value="{{ $dateFin }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            </div>
+
+                            <div class="flex items-end">
+                                <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                    Filtrer
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="md:col-span-3">
+                        <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recherche</label>
-                            <input type="text" name="search" value="{{ $search }}" placeholder="Numéro, nom, téléphone..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Début</label>
-                            <input type="date" name="date_debut" value="{{ $dateDebut }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Fin</label>
-                            <input type="date" name="date_fin" value="{{ $dateFin }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                        </div>
-
-                        <div class="md:col-span-3 flex items-end gap-2">
-                            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                </svg>
-                                Filtrer
-                            </button>
-                            <a href="{{ route('transfers.index') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition">
-                                Réinitialiser
-                            </a>
+                            <div class="flex gap-2">
+                                <input type="text" name="search" value="{{ $search }}" placeholder="Numéro, nom, téléphone..." class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <a href="{{ route('transfers.all') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition whitespace-nowrap">
+                                    Réinitialiser
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
             </div>
+            @endif
 
             <!-- Liste des transferts -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -198,10 +257,19 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($transfer->amount, 0) }} GDS</div>
+                                        @if(Auth::user()->isAdmin())
                                         <div class="text-xs text-gray-500 dark:text-gray-400">Frais: {{ number_format($transfer->fees, 0) }} GDS</div>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {!! $transfer->status_badge !!}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                            @if($transfer->status === 'pending') bg-yellow-500 text-white
+                                            @elseif($transfer->status === 'paid') bg-green-600 text-white
+                                            @elseif($transfer->status === 'cancelled') bg-red-600 text-white
+                                            @else bg-gray-500 text-white
+                                            @endif">
+                                            {{ $transfer->status_label }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center gap-2">

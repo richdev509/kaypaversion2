@@ -197,6 +197,21 @@ class Transfer extends Model
         };
     }
 
+    public function getStatusBadgeAttribute()
+    {
+        $color = $this->status_badge_color;
+        $label = $this->status_label;
+
+        $classes = match($color) {
+            'yellow' => 'bg-yellow-500 text-white dark:bg-yellow-600',
+            'green' => 'bg-green-600 text-white dark:bg-green-700',
+            'red' => 'bg-red-600 text-white dark:bg-red-700',
+            default => 'bg-gray-500 text-white dark:bg-gray-600',
+        };
+
+        return '<span class="px-2 py-1 text-xs font-semibold rounded-full ' . $classes . '">' . $label . '</span>';
+    }
+
     /**
      * Calculer les frais de transfert
      */

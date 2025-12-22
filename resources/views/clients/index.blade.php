@@ -12,14 +12,32 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if((Auth::user()->isAgent() || Auth::user()->isManager()) && !request()->filled('search'))
+            <!-- Message pour les agents et managers sans recherche -->
+            <div class="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 text-blue-500 dark:text-blue-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                        🔍 Utilisez la recherche pour afficher les clients
+                    </h3>
+                    <p class="text-sm text-blue-600 dark:text-blue-300">
+                        Pour consulter les clients, veuillez effectuer une recherche par nom, téléphone, email ou numéro de carte.
+                    </p>
+                </div>
+            </div>
+            @endif
+
             <!-- Barre de recherche -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form action="{{ route('clients.search') }}" method="GET" class="flex gap-3">
+                    <form action="{{ route('clients.index') }}" method="GET" class="flex gap-3">
                         <div class="flex-1">
                             <input
                                 type="text"
                                 name="search"
+                                value="{{ request('search') }}"
                                 placeholder="Rechercher par nom, téléphone, email, numéro de carte..."
                                 class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                             >
@@ -33,6 +51,11 @@
                             </svg>
                             Rechercher
                         </button>
+                        @if(request('search'))
+                        <a href="{{ route('clients.index') }}" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition">
+                            Réinitialiser
+                        </a>
+                        @endif
                     </form>
                 </div>
             </div>

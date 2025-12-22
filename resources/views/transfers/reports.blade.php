@@ -189,6 +189,60 @@
                 </div>
             </div>
 
+            <!-- Statistiques par Branche -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-500 to-indigo-600">
+                    <h2 class="text-lg font-semibold text-white">
+                        <i class="fas fa-code-branch mr-2"></i>
+                        Statistiques par Branche
+                    </h2>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" rowspan="2">Branche</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50" colspan="3">Transferts Envoyés</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-green-50" colspan="2">Transferts Payés</th>
+                            </tr>
+                            <tr>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50">Nombre</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50">Montant</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50">Frais</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-green-50">Nombre</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-green-50">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($branchStats as $stat)
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <i class="fas fa-building text-indigo-600 mr-2"></i>
+                                        {{ $stat['branch']->name }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-blue-600 bg-blue-50">
+                                        {{ number_format($stat['sent_count']) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-blue-600 bg-blue-50">
+                                        {{ number_format($stat['sent_amount'], 2) }} GDS
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-purple-600 bg-blue-50">
+                                        {{ number_format($stat['sent_fees'], 2) }} GDS
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-green-600 bg-green-50">
+                                        {{ number_format($stat['paid_count']) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-green-600 bg-green-50">
+                                        {{ number_format($stat['paid_amount'], 2) }} GDS
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Liste des transferts -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">

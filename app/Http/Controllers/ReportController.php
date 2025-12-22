@@ -107,9 +107,13 @@ class ReportController extends Controller
             'details' => [],
         ];
 
-        // Base query: filtrer par branche via created_by et exclure les transactions annulées
+        // Base query: filtrer par branche via created_by et exclure les transactions annulées et les paiements en ligne (carte/moncash)
         $baseQuery = AccountTransaction::whereBetween('created_at', [$startDate, $endDate->endOfDay()])
-            ->where('status', '!=', 'CANCELLED');
+            ->where('status', '!=', 'CANCELLED')
+            ->where(function($q) {
+                $q->whereNotIn('method', ['CARTE', 'moncash', 'MONCASH'])
+                  ->orWhereNull('method');
+            });
 
         if ($branchId) {
             $baseQuery->whereHas('creator', function($q) use ($branchId) {
@@ -183,6 +187,10 @@ class ReportController extends Controller
         $query = AccountTransaction::whereBetween('account_transactions.created_at', [$startDate, $endDate->endOfDay()])
             ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
             ->where('account_transactions.status', '!=', 'CANCELLED')
+            ->where(function($q) {
+                $q->whereNotIn('account_transactions.method', ['CARTE', 'moncash', 'MONCASH'])
+                  ->orWhereNull('account_transactions.method');
+            })
             ->join('users', 'account_transactions.created_by', '=', 'users.id')
             ->join('branches', 'users.branch_id', '=', 'branches.id')
             ->selectRaw('branches.id, branches.name, COUNT(*) as count, SUM(account_transactions.amount) as total')
@@ -204,6 +212,10 @@ class ReportController extends Controller
         $query = AccountTransaction::whereBetween('account_transactions.created_at', [$startDate, $endDate->endOfDay()])
             ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])
             ->where('account_transactions.status', '!=', 'CANCELLED')
+            ->where(function($q) {
+                $q->whereNotIn('account_transactions.method', ['CARTE', 'moncash', 'MONCASH'])
+                  ->orWhereNull('account_transactions.method');
+            })
             ->join('users', 'account_transactions.created_by', '=', 'users.id')
             ->join('branches', 'users.branch_id', '=', 'branches.id')
             ->selectRaw('branches.id, branches.name, COUNT(*) as count, SUM(account_transactions.amount) as total')
@@ -225,8 +237,12 @@ class ReportController extends Controller
         $query = AccountTransaction::whereBetween('created_at', [$startDate, $endDate->endOfDay()])
             ->with(['account', 'client', 'creator.branch']);
 
-        // Filtrer par type (incluant ajustements) et exclure les annulées
-        $query->where('status', '!=', 'CANCELLED');
+        // Filtrer par type (incluant ajustements) et exclure les annulées et les paiements en ligne
+        $query->where('status', '!=', 'CANCELLED')
+            ->where(function($q) {
+                $q->whereNotIn('method', ['CARTE', 'moncash', 'MONCASH'])
+                  ->orWhereNull('method');
+            });
 
         if ($type === 'deposit') {
             $query->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT']);
@@ -241,6 +257,6 @@ class ReportController extends Controller
             });
         }
 
-        return $query->latest()->paginate(50);
+        return $query->latest()->paginate(50)->appends(request()->except('page'));
     }
 }

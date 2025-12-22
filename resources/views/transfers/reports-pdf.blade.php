@@ -206,6 +206,41 @@
         </div>
     </div>
 
+    <!-- Statistiques par Branche -->
+    <div class="info-section" style="margin-bottom: 20px;">
+        <h3 style="font-size: 12px; color: #1e40af; margin-bottom: 10px; border-bottom: 2px solid #2563eb; padding-bottom: 5px;">
+            STATISTIQUES PAR BRANCHE
+        </h3>
+        <table style="margin-bottom: 10px;">
+            <thead style="background: #4f46e5;">
+                <tr>
+                    <th rowspan="2" style="width: 25%; text-align: left;">Branche</th>
+                    <th colspan="3" style="width: 37.5%; text-align: center; background: #3b82f6;">Transferts Envoyés</th>
+                    <th colspan="2" style="width: 37.5%; text-align: center; background: #10b981;">Transferts Payés</th>
+                </tr>
+                <tr>
+                    <th style="width: 12.5%; text-align: center; background: #3b82f6;">Nombre</th>
+                    <th style="width: 12.5%; text-align: center; background: #3b82f6;">Montant</th>
+                    <th style="width: 12.5%; text-align: center; background: #3b82f6;">Frais</th>
+                    <th style="width: 12.5%; text-align: center; background: #10b981;">Nombre</th>
+                    <th style="width: 25%; text-align: center; background: #10b981;">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($branchStats as $stat)
+                    <tr>
+                        <td style="font-weight: bold;">{{ $stat['branch']->name }}</td>
+                        <td style="text-align: center; background: #eff6ff;">{{ number_format($stat['sent_count']) }}</td>
+                        <td style="text-align: center; background: #eff6ff;">{{ number_format($stat['sent_amount'], 2) }} GDS</td>
+                        <td style="text-align: center; background: #eff6ff; color: #7c3aed; font-weight: bold;">{{ number_format($stat['sent_fees'], 2) }} GDS</td>
+                        <td style="text-align: center; background: #f0fdf4;">{{ number_format($stat['paid_count']) }}</td>
+                        <td style="text-align: center; background: #f0fdf4;">{{ number_format($stat['paid_amount'], 2) }} GDS</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
     <!-- Liste des transferts -->
     <table>
         <thead>

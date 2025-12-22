@@ -18,9 +18,26 @@ class ClientController extends Controller
     /**
      * Display a listing of clients
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clients = Client::latest()->paginate(20);
+        $user = Auth::user();
+
+        // Pour les agents et managers : liste vide par défaut, afficher seulement après recherche
+        if (($user->isAgent() || $user->isManager()) && !$request->filled('search')) {
+            // Retourner une collection vide
+            $clients = Client::whereRaw('1 = 0')->paginate(20);
+        } else {
+            $query = Client::query();
+
+            // Recherche
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->search($search);
+            }
+
+            $clients = $query->latest()->paginate(20)->withQueryString();
+        }
+
         return view('clients.index', compact('clients'));
     }
 

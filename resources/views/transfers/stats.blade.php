@@ -131,7 +131,8 @@
                 </div>
             </div>
 
-            <!-- Revenus détaillés -->
+            <!-- Revenus détaillés (Admin et Comptable uniquement) -->
+            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
@@ -154,6 +155,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <!-- Statistiques par branche -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -169,7 +171,9 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payés</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Montant Total</th>
+                                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Frais</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -179,7 +183,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ number_format($stat->total) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">{{ number_format($stat->paid) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">{{ number_format($stat->total_amount, 0) }} GDS</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ number_format($stat->total_fees, 0) }} GDS</td>
+                                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ number_format($stat->total_fees ?? 0, 0) }} GDS</td>
+                                    @endif
                                 </tr>
                                 @endforeach
                             </tbody>

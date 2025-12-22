@@ -126,7 +126,7 @@ Route::middleware('auth')->group(function () {
 
     // Routes Reports (Rapports)
     Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
-    Route::post('/reports/generate', [\App\Http\Controllers\ReportController::class, 'generate'])->name('reports.generate');
+    Route::match(['get', 'post'], '/reports/generate', [\App\Http\Controllers\ReportController::class, 'generate'])->name('reports.generate');
 
     // Routes Fund Movements (Gestion Financière)
     Route::get('/fund-movements', [\App\Http\Controllers\FundMovementController::class, 'index'])->name('fund-movements.index');

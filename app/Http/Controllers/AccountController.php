@@ -21,34 +21,40 @@ class AccountController extends Controller
         $user = Auth::user();
         $query = Account::with(['client', 'plan']);
 
-        // Recherche
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('account_id', 'like', "%{$search}%")
-                  ->orWhereHas('client', function($q) use ($search) {
-                      $q->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        // Filtre par statut
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filtre par dette
-        if ($request->filled('has_debt')) {
-            if ($request->has_debt == '1') {
-                $query->where('retrait_status', 1);
-            } else {
-                $query->where('retrait_status', 0);
+        // Pour les managers : liste vide par défaut, afficher seulement après recherche
+        if ($user->isManager() && !$request->filled('search') && !$request->filled('status') && !$request->filled('has_debt')) {
+            // Retourner une collection vide pour les managers sans recherche
+            $accounts = Account::whereRaw('1 = 0')->paginate(20);
+        } else {
+            // Recherche
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('account_id', 'like', "%{$search}%")
+                      ->orWhereHas('client', function($q) use ($search) {
+                          $q->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                      });
+                });
             }
-        }
 
-        $accounts = $query->latest()->paginate(20)->withQueryString();
+            // Filtre par statut
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filtre par dette
+            if ($request->filled('has_debt')) {
+                if ($request->has_debt == '1') {
+                    $query->where('retrait_status', 1);
+                } else {
+                    $query->where('retrait_status', 0);
+                }
+            }
+
+            $accounts = $query->latest()->paginate(20)->withQueryString();
+        }
 
         // Statistiques filtrées par succursale (UNIQUEMENT LES STATS)
         $statsQuery = Account::query();

@@ -46,8 +46,8 @@ class TransferController extends Controller
     {
         $user = Auth::user();
 
-        // Vérifier les permissions - uniquement admin et manager
-        if (!$user->isAdmin() && !$user->isManager()) {
+        // Vérifier les permissions - admin, manager et agent
+        if (!$user->isAdmin() && !$user->isManager() && !$user->isAgent()) {
             abort(403, 'Accès non autorisé');
         }
 
@@ -82,10 +82,15 @@ class TransferController extends Controller
 
         // Si pas admin, filtrer par branche
         if (!$user->isAdmin() && $user->branch_id) {
-            $query->where(function($q) use ($user) {
-                $q->where('branch_id', $user->branch_id)
-                  ->orWhere('paid_at_branch_id', $user->branch_id);
-            });
+            if ($user->isManager()) {
+                // Managers: transferts payés uniquement
+                $query->where('paid_at_branch_id', $user->branch_id)
+                      ->where('status', 'paid');
+            } elseif ($user->isAgent()) {
+                // Agents: transferts payés ou annulés dans leur branche
+                $query->where('branch_id', $user->branch_id)
+                      ->whereIn('status', ['paid', 'cancelled']);
+            }
         }
 
         $transfers = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -491,8 +496,8 @@ class TransferController extends Controller
     {
         $user = Auth::user();
 
-        // Vérifier les permissions - uniquement admin et comptable
-        if (!$user->isAdmin() && !$user->hasRole('comptable')) {
+        // Vérifier les permissions - admin, comptable et manager
+        if (!$user->isAdmin() && !$user->hasRole('comptable') && !$user->isManager()) {
             abort(403, 'Accès non autorisé');
         }
 
@@ -507,17 +512,23 @@ class TransferController extends Controller
             Carbon::parse($dateFin)->endOfDay()
         ]);
 
-        // Si manager, forcer le filtre sur sa branche uniquement
-        if (!$user->isAdmin() && $user->branch_id) {
+        // Si manager, forcer le filtre sur sa branche uniquement (transferts créés dans sa branche)
+        if ($user->isManager() && $user->branch_id) {
             $branchId = $user->branch_id;
         }
 
         // Filtre par branche
         if ($branchId) {
-            $query->where(function($q) use ($branchId) {
-                $q->where('branch_id', $branchId)
-                  ->orWhere('paid_at_branch_id', $branchId);
-            });
+            // Managers: seulement transferts créés dans leur branche
+            if ($user->isManager()) {
+                $query->where('branch_id', $branchId);
+            } else {
+                // Admin/Comptable: transferts créés OU payés dans la branche
+                $query->where(function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId)
+                      ->orWhere('paid_at_branch_id', $branchId);
+                });
+            }
         }
 
         // Statistiques globales
@@ -527,9 +538,9 @@ class TransferController extends Controller
             'paid' => (clone $query)->where('status', 'paid')->count(),
             'cancelled' => (clone $query)->where('status', 'cancelled')->count(),
             'total_amount' => (clone $query)->where('status', 'paid')->sum('amount'),
-            'total_fees' => (clone $query)->where('status', 'paid')->sum('fees'),
+            'total_fees' => $user->isAdmin() || $user->hasRole('comptable') ? (clone $query)->where('status', 'paid')->sum('fees') : null,
             'total_discount' => (clone $query)->where('status', 'paid')->sum('discount'),
-            'total_revenue' => (clone $query)->where('status', 'paid')->sum('total_amount'),
+            'total_revenue' => $user->isAdmin() || $user->hasRole('comptable') ? (clone $query)->where('status', 'paid')->sum('total_amount') : null,
         ];
 
         // Statistiques par branche
@@ -537,14 +548,18 @@ class TransferController extends Controller
                 'branches.name as branch_name',
                 DB::raw('COUNT(*) as total'),
                 DB::raw('SUM(CASE WHEN status = "paid" THEN 1 ELSE 0 END) as paid'),
-                DB::raw('SUM(CASE WHEN status = "paid" THEN amount ELSE 0 END) as total_amount'),
-                DB::raw('SUM(CASE WHEN status = "paid" THEN fees ELSE 0 END) as total_fees')
+                DB::raw('SUM(CASE WHEN status = "paid" THEN amount ELSE 0 END) as total_amount')
             )
             ->join('branches', 'transfers.branch_id', '=', 'branches.id')
             ->whereBetween('transfers.created_at', [
                 Carbon::parse($dateDebut)->startOfDay(),
                 Carbon::parse($dateFin)->endOfDay()
             ]);
+
+        // Ajouter les frais seulement pour admin/comptable
+        if ($user->isAdmin() || $user->hasRole('comptable')) {
+            $statsByBranchQuery->addSelect(DB::raw('SUM(CASE WHEN status = "paid" THEN fees ELSE 0 END) as total_fees'));
+        }
 
         // Filtrer par branche si manager
         if ($branchId) {
@@ -567,12 +582,16 @@ class TransferController extends Controller
                 Carbon::parse($dateFin)->endOfDay()
             ]);
 
-        // Filtrer par branche si manager
+        // Filtrer par branche si nécessaire
         if ($branchId) {
-            $statsByDayQuery->where(function($q) use ($branchId) {
-                $q->where('branch_id', $branchId)
-                  ->orWhere('paid_at_branch_id', $branchId);
-            });
+            if ($user->isManager()) {
+                $statsByDayQuery->where('branch_id', $branchId);
+            } else {
+                $statsByDayQuery->where(function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId)
+                      ->orWhere('paid_at_branch_id', $branchId);
+                });
+            }
         }
 
         $statsByDay = $statsByDayQuery
@@ -592,12 +611,16 @@ class TransferController extends Controller
                 Carbon::parse($dateFin)->endOfDay()
             ]);
 
-        // Filtrer par branche si manager
+        // Filtrer par branche si nécessaire
         if ($branchId) {
-            $topAgentsQuery->where(function($q) use ($branchId) {
-                $q->where('transfers.branch_id', $branchId)
-                  ->orWhere('transfers.paid_at_branch_id', $branchId);
-            });
+            if ($user->isManager()) {
+                $topAgentsQuery->where('transfers.branch_id', $branchId);
+            } else {
+                $topAgentsQuery->where(function($q) use ($branchId) {
+                    $q->where('transfers.branch_id', $branchId)
+                      ->orWhere('transfers.paid_at_branch_id', $branchId);
+                });
+            }
         }
 
         $topAgents = $topAgentsQuery
@@ -625,17 +648,27 @@ class TransferController extends Controller
      */
     private function getStats($dateDebut, $dateFin, $user)
     {
+        // Les agents n'ont pas accès aux statistiques
+        if ($user->isAgent()) {
+            return [
+                'total' => 0,
+                'pending' => 0,
+                'paid' => 0,
+                'cancelled' => 0,
+                'total_amount' => 0,
+                'total_fees' => null,
+            ];
+        }
+
         $query = Transfer::whereBetween('created_at', [
             Carbon::parse($dateDebut)->startOfDay(),
             Carbon::parse($dateFin)->endOfDay()
         ]);
 
-        // Filtrer par branche si pas admin
-        if (!$user->isAdmin() && $user->branch_id) {
-            $query->where(function($q) use ($user) {
-                $q->where('branch_id', $user->branch_id)
-                  ->orWhere('paid_at_branch_id', $user->branch_id);
-            });
+        // Filtrer par branche si manager - uniquement transferts payés dans leur branche
+        if ($user->isManager() && $user->branch_id) {
+            $query->where('paid_at_branch_id', $user->branch_id)
+                  ->where('status', 'paid');
         }
 
         return [
@@ -644,7 +677,7 @@ class TransferController extends Controller
             'paid' => (clone $query)->where('status', 'paid')->count(),
             'cancelled' => (clone $query)->where('status', 'cancelled')->count(),
             'total_amount' => (clone $query)->where('status', 'paid')->sum('amount'),
-            'total_fees' => (clone $query)->where('status', 'paid')->sum('fees'),
+            'total_fees' => $user->isAdmin() ? (clone $query)->where('status', 'paid')->sum('fees') : null,
         ];
     }
 
@@ -768,12 +801,45 @@ class TransferController extends Controller
             'cancelled_count' => (clone $query)->where('status', 'cancelled')->count(),
         ];
 
+        // Statistiques par branche
         $branches = Branch::all();
+        $branchStats = [];
+
+        foreach ($branches as $branch) {
+            // Transferts ENVOYÉS par cette branche (créés à cette branche)
+            $sent = Transfer::whereBetween('created_at', [
+                    Carbon::parse($dateDebut)->startOfDay(),
+                    Carbon::parse($dateFin)->endOfDay()
+                ])
+                ->where('branch_id', $branch->id);
+
+            if ($status) {
+                $sent->where('status', $status);
+            }
+
+            // Transferts PAYÉS par cette branche (retirés à cette branche)
+            $paid = Transfer::whereBetween('created_at', [
+                    Carbon::parse($dateDebut)->startOfDay(),
+                    Carbon::parse($dateFin)->endOfDay()
+                ])
+                ->where('paid_at_branch_id', $branch->id)
+                ->where('status', 'paid');
+
+            $branchStats[] = [
+                'branch' => $branch,
+                'sent_count' => $sent->count(),
+                'sent_amount' => $sent->sum('amount'),
+                'sent_fees' => $sent->sum('fees'),
+                'paid_count' => $paid->count(),
+                'paid_amount' => $paid->sum('amount'),
+            ];
+        }
 
         return view('transfers.reports', compact(
             'transfers',
             'stats',
             'branches',
+            'branchStats',
             'dateDebut',
             'dateFin',
             'status',
@@ -933,11 +999,46 @@ class TransferController extends Controller
             'cancelled_count' => $transfers->where('status', 'cancelled')->count(),
         ];
 
+        // Statistiques par branche
+        $branches = Branch::all();
+        $branchStats = [];
+
+        foreach ($branches as $branchItem) {
+            // Transferts ENVOYÉS par cette branche
+            $sent = Transfer::whereBetween('created_at', [
+                    Carbon::parse($dateDebut)->startOfDay(),
+                    Carbon::parse($dateFin)->endOfDay()
+                ])
+                ->where('branch_id', $branchItem->id);
+
+            if ($status) {
+                $sent->where('status', $status);
+            }
+
+            // Transferts PAYÉS par cette branche
+            $paid = Transfer::whereBetween('created_at', [
+                    Carbon::parse($dateDebut)->startOfDay(),
+                    Carbon::parse($dateFin)->endOfDay()
+                ])
+                ->where('paid_at_branch_id', $branchItem->id)
+                ->where('status', 'paid');
+
+            $branchStats[] = [
+                'branch' => $branchItem,
+                'sent_count' => $sent->count(),
+                'sent_amount' => $sent->sum('amount'),
+                'sent_fees' => $sent->sum('fees'),
+                'paid_count' => $paid->count(),
+                'paid_amount' => $paid->sum('amount'),
+            ];
+        }
+
         $branch = $branchId ? Branch::find($branchId) : null;
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('transfers.reports-pdf', compact(
             'transfers',
             'stats',
+            'branchStats',
             'dateDebut',
             'dateFin',
             'status',

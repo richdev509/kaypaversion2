@@ -97,6 +97,23 @@
                 </div>
             </div>
 
+            @if(Auth::user()->isManager() && !request()->filled('search') && !request()->filled('status') && !request()->filled('has_debt'))
+            <!-- Message pour les managers sans recherche -->
+            <div class="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 text-blue-500 dark:text-blue-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                        🔍 Utilisez la recherche pour afficher les comptes
+                    </h3>
+                    <p class="text-sm text-blue-600 dark:text-blue-300">
+                        Pour consulter les comptes, veuillez effectuer une recherche par numéro de compte, nom de client ou utiliser les filtres ci-dessus.
+                    </p>
+                </div>
+            </div>
+            @endif
+
             <!-- Recherche et Filtres -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
