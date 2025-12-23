@@ -7,6 +7,7 @@ use App\Models\TransferSetting;
 use App\Models\Account;
 use App\Models\Department;
 use App\Models\Branch;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -196,6 +197,13 @@ class TransferController extends Controller
                 'note' => $validated['note'] ?? null,
             ]);
 
+            // Log de l'activité
+            ActivityLogger::logCreate(
+                'Transfer',
+                $transfer->id,
+                "Création du transfert #{$transfer->transfer_number} de {$transfer->amount} HTG pour {$transfer->receiver_name}"
+            );
+
             DB::commit();
 
             return redirect()->route('transfers.receipt', $transfer->id)
@@ -290,6 +298,12 @@ class TransferController extends Controller
                 'receiver_city_id' => $validated['receiver_city_id'] ?? null,
             ]);
 
+            // Log de l'activité
+            ActivityLogger::logCustom(
+                'payment',
+                "Paiement du transfert #{$transfer->transfer_number} de {$transfer->total_amount} HTG à {$transfer->receiver_name}"
+            );
+
             DB::commit();
 
             return redirect()->route('transfers.receipt-receiver', $transfer->id)
@@ -326,6 +340,13 @@ class TransferController extends Controller
             'cancelled_at' => now(),
             'cancellation_reason' => $request->cancellation_reason,
         ]);
+
+        // Log de l'activité
+        ActivityLogger::logCustom(
+            'cancel',
+            "Annulation du transfert #{$transfer->transfer_number}",
+            $request->cancellation_reason
+        );
 
         return redirect()->route('transfers.index')
             ->with('success', 'Transfert annulé');
@@ -418,6 +439,15 @@ class TransferController extends Controller
         $validated['modification_history'] = json_encode($history);
 
         $transfer->update($validated);
+
+        // Log de l'activité
+        ActivityLogger::logUpdate(
+            'Transfer',
+            $transfer->id,
+            "Modification du transfert #{$transfer->transfer_number}",
+            ['before' => $oldValues, 'after' => $transfer->only(['sender_name', 'sender_phone', 'receiver_name', 'receiver_phone', 'amount', 'fees', 'total_amount'])],
+            $request->modification_reason
+        );
 
         return redirect()->route('transfers.show', $transfer)
             ->with('success', 'Transfert modifié avec succès');
@@ -743,8 +773,18 @@ class TransferController extends Controller
             $settings = new TransferSetting();
         }
 
+        $oldSettings = $settings->toArray();
+
         $settings->fill($validated);
         $settings->save();
+
+        // Log de l'activité
+        ActivityLogger::logUpdate(
+            'TransferSetting',
+            $settings->id,
+            "Modification des paramètres de transfert",
+            ['before' => $oldSettings, 'after' => $settings->toArray()]
+        );
 
         return redirect()->route('transfers.settings')
             ->with('success', 'Paramètres mis à jour avec succès');
@@ -1128,6 +1168,13 @@ class TransferController extends Controller
             'disputed_at' => now(),
         ]);
 
+        // Log de l'activité
+        ActivityLogger::logCustom(
+            'dispute_created',
+            "Création d'un litige pour le transfert #{$transfer->transfer_number}",
+            $request->dispute_reason
+        );
+
         return redirect()->route('transfers.disputes')
             ->with('success', 'Litige créé avec succès');
     }
@@ -1161,6 +1208,13 @@ class TransferController extends Controller
         }
 
         $transfer->update($data);
+
+        // Log de l'activité
+        ActivityLogger::logCustom(
+            'dispute_updated',
+            "Mise à jour du statut du litige du transfert #{$transfer->transfer_number} vers '{$request->dispute_status}'",
+            $request->dispute_resolution ?? null
+        );
 
         return back()->with('success', 'Statut du litige mis à jour');
     }
