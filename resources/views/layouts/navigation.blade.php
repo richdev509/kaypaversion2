@@ -137,6 +137,11 @@
                                 🔐 Rôles & Permissions
                             </x-dropdown-link>
                             @endif
+                            @if(Auth::user()->isAdmin())
+                            <x-dropdown-link :href="route('activity-logs.index')">
+                                📊 Monitoring
+                            </x-dropdown-link>
+                            @endif
                         </x-slot>
                     </x-dropdown>
                     @endif

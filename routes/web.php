@@ -262,5 +262,11 @@ Route::get('/test-db', function () {
     }
 });
 
+// Routes Monitoring des Activités (Admin uniquement)
+Route::middleware('auth')->prefix('activity-logs')->name('activity-logs.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('index');
+    Route::get('/{log}', [\App\Http\Controllers\ActivityLogController::class, 'show'])->name('show');
+});
+
 // Inclure les routes d'authentification
 require __DIR__.'/auth.php';
