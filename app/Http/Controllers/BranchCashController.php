@@ -58,8 +58,13 @@ class BranchCashController extends Controller
 
         // 1. Transactions clients (Dépôts/Retraits/Ajustements)
         // Filtrage par l'agent qui a créé la transaction (created_by)
+        // Exclure les transactions wallet (ne passent pas par la caisse)
         $clientTransactions = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
+        })
+        ->where(function($q) {
+            $q->where('method', '!=', 'wallet')
+              ->orWhereNull('method');
         })
         ->whereDate('created_at', '>=', now()->subDays(30))
         ->orderByDesc('created_at')
@@ -132,10 +137,15 @@ class BranchCashController extends Controller
 
         // Transactions du jour (incluant ajustements et paiement initial)
         // Filtrage par l'agent qui a créé la transaction (created_by)
+        // Exclure les transactions wallet (ne passent pas par la caisse)
         $todayDeposits = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
+        ->where(function($q) {
+            $q->where('method', '!=', 'wallet')
+              ->orWhereNull('method');
+        })
         ->whereDate('created_at', today())
         ->sum('amount');
 
@@ -143,6 +153,10 @@ class BranchCashController extends Controller
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])
+        ->where(function($q) {
+            $q->where('method', '!=', 'wallet')
+              ->orWhereNull('method');
+        })
         ->whereDate('created_at', today())
         ->sum('amount');
 
@@ -162,10 +176,15 @@ class BranchCashController extends Controller
 
         // Transactions du mois (incluant ajustements et paiement initial)
         // Filtrage par l'agent qui a créé la transaction (created_by)
+        // Exclure les transactions wallet (ne passent pas par la caisse)
         $monthDeposits = AccountTransaction::whereHas('creator', function($q) use ($branchId) {
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
+        ->where(function($q) {
+            $q->where('method', '!=', 'wallet')
+              ->orWhereNull('method');
+        })
         ->whereMonth('created_at', now()->month)
         ->sum('amount');
 
@@ -173,6 +192,10 @@ class BranchCashController extends Controller
             $q->where('branch_id', $branchId);
         })
         ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])
+        ->where(function($q) {
+            $q->where('method', '!=', 'wallet')
+              ->orWhereNull('method');
+        })
         ->whereMonth('created_at', now()->month)
         ->sum('amount');
 

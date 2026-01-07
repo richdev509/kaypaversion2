@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\WithdrawalRequest;
 use App\Models\Account;
 use App\Models\AccountTransaction;
+use App\Models\TransactionOnline;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -155,6 +156,25 @@ class WithdrawalRequestController extends Controller
                 'note' => 'Retrait approuvé - ' . $withdrawalRequest->reference_id . ($validated['admin_note'] ? ' - ' . $validated['admin_note'] : ''),
                 'status' => 'ACTIVE',
                 'created_by' => auth()->id(),
+            ]);
+
+            // Enregistrer aussi dans transaction_online
+            TransactionOnline::create([
+                'account_id' => $account->account_id,
+                'type' => 'retrait',
+                'montant' => $withdrawalRequest->amount,
+                'balance_avant' => $balanceBefore,
+                'balance_apres' => $balanceAfter,
+                'ordre_id' => $withdrawalRequest->reference_id,
+                'gateway' => $withdrawalRequest->method,
+                'statut' => 'reussie',
+                'description' => 'Retrait online approuvé - ' . $withdrawalRequest->reference_id,
+                'metadata' => [
+                    'withdrawal_request_id' => $withdrawalRequest->id,
+                    'transaction_id' => $transaction->id,
+                    'processed_by' => auth()->id(),
+                    'admin_note' => $validated['admin_note'] ?? null,
+                ],
             ]);
 
             // Mettre à jour la demande de retrait

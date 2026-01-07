@@ -107,11 +107,11 @@ class ReportController extends Controller
             'details' => [],
         ];
 
-        // Base query: filtrer par branche via created_by et exclure les transactions annulées et les paiements en ligne (carte/moncash)
+        // Base query: filtrer par branche via created_by et exclure les transactions annulées et les paiements en ligne (carte/moncash/wallet)
         $baseQuery = AccountTransaction::whereBetween('created_at', [$startDate, $endDate->endOfDay()])
             ->where('status', '!=', 'CANCELLED')
             ->where(function($q) {
-                $q->whereNotIn('method', ['CARTE', 'moncash', 'MONCASH'])
+                $q->whereNotIn('method', ['CARTE', 'moncash', 'MONCASH', 'wallet'])
                   ->orWhereNull('method');
             });
 
@@ -188,7 +188,7 @@ class ReportController extends Controller
             ->whereIn('type', ['PAIEMENT', 'AJUSTEMENT-DEPOT', 'Paiement initial'])
             ->where('account_transactions.status', '!=', 'CANCELLED')
             ->where(function($q) {
-                $q->whereNotIn('account_transactions.method', ['CARTE', 'moncash', 'MONCASH'])
+                $q->whereNotIn('account_transactions.method', ['CARTE', 'moncash', 'MONCASH', 'wallet'])
                   ->orWhereNull('account_transactions.method');
             })
             ->join('users', 'account_transactions.created_by', '=', 'users.id')
@@ -213,7 +213,7 @@ class ReportController extends Controller
             ->whereIn('type', ['RETRAIT', 'AJUSTEMENT-RETRAIT'])
             ->where('account_transactions.status', '!=', 'CANCELLED')
             ->where(function($q) {
-                $q->whereNotIn('account_transactions.method', ['CARTE', 'moncash', 'MONCASH'])
+                $q->whereNotIn('account_transactions.method', ['CARTE', 'moncash', 'MONCASH', 'wallet'])
                   ->orWhereNull('account_transactions.method');
             })
             ->join('users', 'account_transactions.created_by', '=', 'users.id')
@@ -240,7 +240,7 @@ class ReportController extends Controller
         // Filtrer par type (incluant ajustements) et exclure les annulées et les paiements en ligne
         $query->where('status', '!=', 'CANCELLED')
             ->where(function($q) {
-                $q->whereNotIn('method', ['CARTE', 'moncash', 'MONCASH'])
+                $q->whereNotIn('method', ['CARTE', 'moncash', 'MONCASH', 'wallet'])
                   ->orWhereNull('method');
             });
 
