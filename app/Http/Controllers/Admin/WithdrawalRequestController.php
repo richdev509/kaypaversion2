@@ -111,31 +111,34 @@ class WithdrawalRequestController extends Controller
             // Récupérer le compte
             $account = Account::where('account_id', $withdrawalRequest->account_id)->firstOrFail();
 
+            // Utiliser amount_after comme solde réel du compte (ou balance si amount_after est null)
+            $currentBalance = $account->amount_after ?? $account->balance ?? 0;
+
             // Vérifier le solde
-            if ($account->balance < $withdrawalRequest->amount) {
-                throw new \Exception('Solde insuffisant sur le compte.');
+            if ($currentBalance < $withdrawalRequest->amount) {
+                throw new \Exception('Solde insuffisant sur le compte. Solde disponible: ' . number_format($currentBalance, 2) . ' HTG');
             }
 
             // Enregistrer les soldes avant/après
-            $balanceBefore = $account->balance;
+            $balanceBefore = $currentBalance;
             $balanceAfter = $balanceBefore - $withdrawalRequest->amount;
 
-            // Déduire le montant du compte
-            $account->balance = $balanceAfter;
+            // Déduire le montant du compte (mettre à jour amount_after)
+            $account->amount_after = $balanceAfter;
             $account->save();
 
             // Créer la transaction
             $transaction = AccountTransaction::create([
                 'account_id' => $account->account_id,
                 'client_id' => $withdrawalRequest->client_id,
-                'transaction_type' => 'debit',
+                'type' => AccountTransaction::TYPE_RETRAIT,
                 'amount' => $withdrawalRequest->amount,
-                'balance_before' => $balanceBefore,
-                'balance_after' => $balanceAfter,
-                'description' => 'Retrait approuvé - ' . $withdrawalRequest->reference_id,
-                'reference_number' => 'WR-' . $withdrawalRequest->id . '-' . time(),
+                'amount_after' => $balanceAfter,
+                'method' => $withdrawalRequest->method,
+                'reference' => 'WR-' . $withdrawalRequest->id . '-' . time(),
+                'note' => 'Retrait approuvé - ' . $withdrawalRequest->reference_id . ($validated['admin_note'] ? ' - ' . $validated['admin_note'] : ''),
                 'status' => 'completed',
-                'processed_by' => auth()->id(),
+                'created_by' => auth()->id(),
             ]);
 
             // Mettre à jour la demande de retrait
