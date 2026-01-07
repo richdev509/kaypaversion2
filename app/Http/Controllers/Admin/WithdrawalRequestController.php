@@ -135,6 +135,12 @@ class WithdrawalRequestController extends Controller
 
             // Déduire le montant du compte (mettre à jour amount_after)
             $account->amount_after = $balanceAfter;
+
+            // Si le solde est à 0, passer le compte en statut "cloture"
+            if ($balanceAfter <= 0) {
+                $account->status = 'cloture';
+            }
+
             $account->save();
 
             // Créer la transaction
@@ -147,7 +153,7 @@ class WithdrawalRequestController extends Controller
                 'method' => $withdrawalRequest->method,
                 'reference' => 'WR-' . $withdrawalRequest->id . '-' . time(),
                 'note' => 'Retrait approuvé - ' . $withdrawalRequest->reference_id . ($validated['admin_note'] ? ' - ' . $validated['admin_note'] : ''),
-                'status' => 'completed',
+                'status' => 'ACTIVE',
                 'created_by' => auth()->id(),
             ]);
 
