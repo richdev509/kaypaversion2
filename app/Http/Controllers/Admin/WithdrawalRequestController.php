@@ -94,8 +94,8 @@ class WithdrawalRequestController extends Controller
 
         $withdrawalRequest->update($updateData);
 
-        $message = $validated['status'] === 'processing' 
-            ? 'Demande mise en traitement.' 
+        $message = $validated['status'] === 'processing'
+            ? 'Demande mise en traitement.'
             : 'Demande annulée avec succès.';
 
         return redirect()->route('admin.withdrawals.show', $id)
@@ -140,7 +140,7 @@ class WithdrawalRequestController extends Controller
             // Créer la transaction
             $transaction = AccountTransaction::create([
                 'account_id' => $account->account_id,
-                'client_id' => $withdrawalRequest->client_id,
+                'client_id' => $withdrawalRequest->client->id,
                 'type' => AccountTransaction::TYPE_RETRAIT,
                 'amount' => $withdrawalRequest->amount,
                 'amount_after' => $balanceAfter,
