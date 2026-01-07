@@ -81,15 +81,25 @@ class WithdrawalRequestController extends Controller
             return back()->with('error', 'Cette demande ne peut plus être modifiée.');
         }
 
-        $withdrawalRequest->update([
+        $updateData = [
             'status' => $validated['status'],
             'admin_note' => $validated['admin_note'] ?? $withdrawalRequest->admin_note,
-            'processed_by' => auth()->id(),
-            'processed_at' => now(),
-        ]);
+        ];
+
+        // Si la demande est annulée, enregistrer qui l'a annulée et quand
+        if ($validated['status'] === 'cancelled') {
+            $updateData['processed_by'] = auth()->id();
+            $updateData['processed_at'] = now();
+        }
+
+        $withdrawalRequest->update($updateData);
+
+        $message = $validated['status'] === 'processing' 
+            ? 'Demande mise en traitement.' 
+            : 'Demande annulée avec succès.';
 
         return redirect()->route('admin.withdrawals.show', $id)
-            ->with('success', 'Statut mis à jour avec succès.');
+            ->with('success', $message);
     }
 
     public function approve(Request $request, $id)
