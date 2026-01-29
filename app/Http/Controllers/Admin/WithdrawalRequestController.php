@@ -131,19 +131,21 @@ class WithdrawalRequestController extends Controller
             }
 
             // Enregistrer les soldes avant/après
-            $balanceBefore = $currentBalance;
-            $balanceAfter = $balanceBefore - $withdrawalRequest->amount;
+           // $balanceBefore = $currentBalance;
+           // $balanceAfter = $balanceBefore - $withdrawalRequest->amount;
 
             // Déduire le montant du compte (mettre à jour amount_after)
-            $account->amount_after = $balanceAfter;
+            $balanceAfter= $account->amount_after;
 
             // Si le solde est à 0, passer le compte en statut "cloture"
             if ($balanceAfter <= 0) {
                 $account->status = 'cloture';
+                $account->save();
             }
 
-            $account->save();
 
+
+           $balanceAfter= $account->amount_after;
             // Créer la transaction
             $transaction = AccountTransaction::create([
                 'account_id' => $account->account_id,
@@ -163,7 +165,8 @@ class WithdrawalRequestController extends Controller
                 'account_id' => $account->account_id,
                 'type' => 'retrait',
                 'montant' => $withdrawalRequest->amount,
-                'balance_avant' => $balanceBefore,
+                //ici changement
+                'balance_avant' => $withdrawalRequest->balance_before,
                 'balance_apres' => $balanceAfter,
                 'ordre_id' => $withdrawalRequest->reference_id,
                 'gateway' => $withdrawalRequest->method,
@@ -184,8 +187,9 @@ class WithdrawalRequestController extends Controller
                 'processed_by' => auth()->id(),
                 'processed_at' => now(),
                 'transaction_id' => $transaction->id,
-                'balance_before' => $balanceBefore,
-                'balance_after' => $balanceAfter,
+                //ici changement
+                //'balance_before' => $balanceBefore,
+               // 'balance_after' => $balanceAfter,
             ]);
 
             DB::commit();
