@@ -123,12 +123,12 @@ class WithdrawalRequestController extends Controller
             $account = Account::where('account_id', $withdrawalRequest->account_id)->firstOrFail();
 
             // Utiliser amount_after comme solde réel du compte (ou balance si amount_after est null)
-            $currentBalance = $account->amount_after ?? $account->balance ?? 0;
+           // $currentBalance = $account->amount_after ?? $account->balance ?? 0;
 
             // Vérifier le solde
-            if ($currentBalance < $withdrawalRequest->amount) {
-                throw new \Exception('Solde insuffisant sur le compte. Solde disponible: ' . number_format($currentBalance, 2) . ' HTG');
-            }
+           /// if ($currentBalance < $withdrawalRequest->amount) {
+          //      throw new \Exception('Solde insuffisant sur le compte. Solde disponible: ' . number_format($currentBalance, 2) . ' HTG');
+          //  }
 
             // Enregistrer les soldes avant/après
            // $balanceBefore = $currentBalance;
