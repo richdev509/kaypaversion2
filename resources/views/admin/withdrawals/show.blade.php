@@ -216,11 +216,7 @@
                 <!-- Actions et historique -->
                 <div class="space-y-6">
                     <!-- Actions -->
-                    @php
-                        $accountIsClosed = $request->account && in_array($request->account->status, ['clos', 'cloture', 'closed']);
-                    @endphp
-
-                    @if($request->canBeProcessed() && !$accountIsClosed)
+                    @if($request->canBeProcessed())
                         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                             <div class="p-6">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">⚙️ Actions</h3>
