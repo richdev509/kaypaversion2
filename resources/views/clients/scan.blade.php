@@ -207,72 +207,134 @@
             }
         }
 
+        // ✅ Fonction de compression d'image
+        function compressImage(dataUrl, maxWidth = 1200, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Redimensionner si trop grand
+                    if (width > maxWidth) {
+                        height = height * (maxWidth / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Compresser en JPEG avec qualité réduite
+                    const compressed = canvas.toDataURL('image/jpeg', quality);
+
+                    // Afficher la réduction de taille dans la console
+                    const originalSize = (dataUrl.length * 3) / 4 / 1024 / 1024;
+                    const compressedSize = (compressed.length * 3) / 4 / 1024 / 1024;
+                    console.log(`Compression: ${originalSize.toFixed(2)} MB → ${compressedSize.toFixed(2)} MB (${((1 - compressedSize/originalSize) * 100).toFixed(1)}% réduit)`);
+
+                    resolve(compressed);
+                };
+                img.onerror = function() {
+                    reject(new Error('Erreur de chargement de l\'image'));
+                };
+                img.src = dataUrl;
+            });
+        }
+
         // Gestion photo front
-        document.getElementById('input-front').addEventListener('change', function(e) {
+        document.getElementById('input-front').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    photosData.front = event.target.result;
-                    document.getElementById('img-front').src = event.target.result;
-                    document.getElementById('preview-front').classList.remove('hidden');
-                    document.getElementById('check-front').classList.remove('hidden');
-                    document.getElementById('btn-front').textContent = 'Photo capturée ✓';
-                    document.getElementById('btn-front').classList.add('bg-green-600');
+                reader.onload = async function(event) {
+                    try {
+                        // ✅ Compresser l'image avant stockage
+                        const compressed = await compressImage(event.target.result, 1200, 0.7);
 
-                    // Activer la carte suivante
-                    document.getElementById('card-back').classList.remove('opacity-50');
-                    document.getElementById('input-back').disabled = false;
-                    document.getElementById('btn-back').disabled = false;
-                    document.getElementById('btn-back').classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-                    document.getElementById('btn-back').classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white');
+                        photosData.front = compressed;
+                        document.getElementById('img-front').src = compressed;
+                        document.getElementById('preview-front').classList.remove('hidden');
+                        document.getElementById('check-front').classList.remove('hidden');
+                        document.getElementById('btn-front').textContent = 'Photo capturée ✓';
+                        document.getElementById('btn-front').classList.add('bg-green-600');
 
-                    updateProgress();
+                        // Activer la carte suivante
+                        document.getElementById('card-back').classList.remove('opacity-50');
+                        document.getElementById('input-back').disabled = false;
+                        document.getElementById('btn-back').disabled = false;
+                        document.getElementById('btn-back').classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                        document.getElementById('btn-back').classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white');
+
+                        updateProgress();
+                    } catch (error) {
+                        console.error('Erreur compression:', error);
+                        alert('Erreur lors de la compression de l\'image');
+                    }
                 };
                 reader.readAsDataURL(file);
             }
         });
 
         // Gestion photo back
-        document.getElementById('input-back').addEventListener('change', function(e) {
+        document.getElementById('input-back').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    photosData.back = event.target.result;
-                    document.getElementById('img-back').src = event.target.result;
-                    document.getElementById('preview-back').classList.remove('hidden');
-                    document.getElementById('check-back').classList.remove('hidden');
-                    document.getElementById('btn-back').textContent = 'Photo capturée ✓';
-                    document.getElementById('btn-back').classList.add('bg-green-600');
+                reader.onload = async function(event) {
+                    try {
+                        // ✅ Compresser l'image avant stockage
+                        const compressed = await compressImage(event.target.result, 1200, 0.7);
 
-                    // Activer la carte suivante
-                    document.getElementById('card-selfie').classList.remove('opacity-50');
-                    document.getElementById('input-selfie').disabled = false;
-                    document.getElementById('btn-selfie').disabled = false;
-                    document.getElementById('btn-selfie').classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-                    document.getElementById('btn-selfie').classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white');
+                        photosData.back = compressed;
+                        document.getElementById('img-back').src = compressed;
+                        document.getElementById('preview-back').classList.remove('hidden');
+                        document.getElementById('check-back').classList.remove('hidden');
+                        document.getElementById('btn-back').textContent = 'Photo capturée ✓';
+                        document.getElementById('btn-back').classList.add('bg-green-600');
 
-                    updateProgress();
+                        // Activer la carte suivante
+                        document.getElementById('card-selfie').classList.remove('opacity-50');
+                        document.getElementById('input-selfie').disabled = false;
+                        document.getElementById('btn-selfie').disabled = false;
+                        document.getElementById('btn-selfie').classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                        document.getElementById('btn-selfie').classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white');
+
+                        updateProgress();
+                    } catch (error) {
+                        console.error('Erreur compression:', error);
+                        alert('Erreur lors de la compression de l\'image');
+                    }
                 };
                 reader.readAsDataURL(file);
             }
         });
 
         // Gestion photo selfie
-        document.getElementById('input-selfie').addEventListener('change', function(e) {
+        document.getElementById('input-selfie').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    photosData.selfie = event.target.result;
-                    document.getElementById('img-selfie').src = event.target.result;
-                    document.getElementById('preview-selfie').classList.remove('hidden');
-                    document.getElementById('check-selfie').classList.remove('hidden');
-                    document.getElementById('btn-selfie').textContent = 'Photo capturée ✓';
-                    document.getElementById('btn-selfie').classList.add('bg-green-600');
+                reader.onload = async function(event) {
+                    try {
+                        // ✅ Compresser l'image avant stockage
+                        const compressed = await compressImage(event.target.result, 1200, 0.7);
 
-                    updateProgress();
+                        photosData.selfie = compressed;
+                        document.getElementById('img-selfie').src = compressed;
+                        document.getElementById('preview-selfie').classList.remove('hidden');
+                        document.getElementById('check-selfie').classList.remove('hidden');
+                        document.getElementById('btn-selfie').textContent = 'Photo capturée ✓';
+                        document.getElementById('btn-selfie').classList.add('bg-green-600');
+
+                        updateProgress();
+                    } catch (error) {
+                        console.error('Erreur compression:', error);
+                        alert('Erreur lors de la compression de l\'image');
+                    }
                 };
                 reader.readAsDataURL(file);
             }
