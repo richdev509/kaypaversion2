@@ -7,6 +7,7 @@ use App\Models\TransactionOnline;
 use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Carbon\Carbon;
 
 class OnlinePaymentController extends Controller
@@ -286,6 +287,53 @@ class OnlinePaymentController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Recalculer la balance des paiements en ligne
+     */
+    public function recalculate()
+    {
+        if (!auth()->user()->hasAnyRole(['admin'])) {
+            abort(403, 'Accès non autorisé');
+        }
+
+        try {
+            // Calculer les totaux à partir des transactions réussies
+            $totalDepot = TransactionOnline::where('type', 'depot')
+                ->where('statut', 'reussie')
+                ->sum('montant');
+
+            $totalRetrait = TransactionOnline::where('type', 'retrait')
+                ->where('statut', 'reussie')
+                ->sum('montant');
+
+            $totalOuverture = TransactionOnline::where('type', 'ouverture')
+                ->where('statut', 'reussie')
+                ->sum('montant');
+
+            $balance = $totalDepot - $totalRetrait + $totalOuverture;
+            $nombreTransactions = TransactionOnline::where('statut', 'reussie')->count();
+            $derniereTransaction = TransactionOnline::where('statut', 'reussie')
+                ->latest('created_at')
+                ->first();
+
+            // Mettre à jour la balance
+            $balanceRecord = BalancePaiementOnline::getSolde();
+            $balanceRecord->balance = $balance;
+            $balanceRecord->total_depot = $totalDepot;
+            $balanceRecord->total_retrait = $totalRetrait;
+            $balanceRecord->total_ouverture = $totalOuverture;
+            $balanceRecord->nombre_transactions = $nombreTransactions;
+            $balanceRecord->derniere_transaction = $derniereTransaction?->created_at;
+            $balanceRecord->save();
+
+            return redirect()->route('online-payments.index')
+                ->with('success', 'Balance recalculée avec succès : ' . number_format($balance, 2) . ' HTG');
+        } catch (\Exception $e) {
+            return redirect()->route('online-payments.index')
+                ->with('error', 'Erreur lors du recalcul : ' . $e->getMessage());
+        }
     }
 
     /**

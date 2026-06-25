@@ -11,6 +11,7 @@ class TransferSetting extends Model
         'max_amount',
         'transfer_fee_percentage',
         'transfer_fee_fixed',
+        'exchange_rate',
         'kaypa_client_discount',
         'is_active',
     ];
@@ -20,6 +21,7 @@ class TransferSetting extends Model
         'max_amount' => 'decimal:2',
         'transfer_fee_percentage' => 'decimal:2',
         'transfer_fee_fixed' => 'decimal:2',
+        'exchange_rate' => 'decimal:2',
         'kaypa_client_discount' => 'decimal:2',
         'is_active' => 'boolean',
     ];

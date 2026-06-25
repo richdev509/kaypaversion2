@@ -214,11 +214,58 @@
                                 </h3>
                             </div>
                             <div class="p-6 space-y-4">
+                                <!-- ID Membre (Nouveau) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        ID Manb <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input type="text" name="receiver_member_id" id="receiver_member_id" required
+                                            class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('receiver_member_id') border-red-500 @enderror"
+                                            value="{{ old('receiver_member_id') }}"
+                                            placeholder="M0001">
+                                        <button type="button" id="searchMemberBtn"
+                                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition">
+                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                        Chèche manm nan sistèm lan (egzanp: M0001, M0002)
+                                    </p>
+                                    <div id="memberInfo" class="mt-2 hidden">
+                                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-green-900 dark:border-green-700">
+                                            <div class="flex items-start">
+                                                <svg class="w-5 h-5 mr-2 text-green-700 dark:text-green-300 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                <div class="flex-1 text-green-700 dark:text-green-300">
+                                                    <p class="font-semibold"><span id="memberName"></span></p>
+                                                    <p class="text-sm"><span id="memberPhone"></span></p>
+                                                    <p class="text-sm mt-1">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                            KYC Verifye
+                                                        </span>
+                                                        <span id="memberBranch" class="ml-2 text-xs"></span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @error('receiver_member_id')
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Nom Complet <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="text" name="receiver_name" required
+                                    <input type="text" name="receiver_name" id="receiver_name" required
                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('receiver_name') border-red-500 @enderror"
                                         value="{{ old('receiver_name') }}">
                                     @error('receiver_name')

@@ -26,6 +26,100 @@
                     <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
                         Comptes
                     </x-nav-link>
+                    @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+                    <x-dropdown align="top" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('current-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <span>🏦 C. Courants</span>
+                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('current-accounts.index')" :active="request()->routeIs('current-accounts.index')">
+                                Liste des comptes
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('current-accounts.create')" :active="request()->routeIs('current-accounts.create')">
+                                Ouvrir un compte
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('current-accounts.dashboard')" :active="request()->routeIs('current-accounts.dashboard')">
+                                Dashboard comptable
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('current-accounts.report')" :active="request()->routeIs('current-accounts.report')">
+                                Rapport financier
+                            </x-dropdown-link>
+                            @if(Auth::user()->role === 'admin')
+                            <x-dropdown-link :href="route('current-accounts.settings')" :active="request()->routeIs('current-accounts.settings')">
+                                Paramètres
+                            </x-dropdown-link>
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
+                    @else
+                    <x-dropdown align="top" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('current-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <span>🏦 C. Courants</span>
+                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('current-accounts.index')" :active="request()->routeIs('current-accounts.index')">
+                                Liste des comptes
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('current-accounts.create')" :active="request()->routeIs('current-accounts.create')">
+                                Ouvrir un compte
+                            </x-dropdown-link>
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
+
+                    {{-- Compte Épargne --}}
+                    @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+                    <x-dropdown align="top" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('savings-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <span>💰 C. Épargne</span>
+                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('savings-accounts.index')" :active="request()->routeIs('savings-accounts.index')">
+                                Liste des comptes
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('savings-accounts.create')" :active="request()->routeIs('savings-accounts.create')">
+                                Ouvrir un compte
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('savings-accounts.dashboard')" :active="request()->routeIs('savings-accounts.dashboard')">
+                                Dashboard comptable
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('savings-accounts.report')" :active="request()->routeIs('savings-accounts.report')">
+                                Rapport financier
+                            </x-dropdown-link>
+                            @if(Auth::user()->role === 'admin')
+                            <x-dropdown-link :href="route('savings-accounts.settings')" :active="request()->routeIs('savings-accounts.settings')">
+                                Paramètres
+                            </x-dropdown-link>
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
+                    @else
+                    <x-dropdown align="top" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('savings-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <span>💰 C. Épargne</span>
+                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('savings-accounts.index')" :active="request()->routeIs('savings-accounts.index')">
+                                Liste des comptes
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('savings-accounts.create')" :active="request()->routeIs('savings-accounts.create')">
+                                Ouvrir un compte
+                            </x-dropdown-link>
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
 
                     <!-- Menu déroulant Transferts -->
                     @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
@@ -211,6 +305,35 @@
             <x-responsive-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
                 Comptes
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('current-accounts.index')" :active="request()->routeIs('current-accounts.index')">
+                🏦 Comptes Courants
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('current-accounts.create')" :active="request()->routeIs('current-accounts.create')">
+                &nbsp;&nbsp;↳ Ouvrir un compte
+            </x-responsive-nav-link>
+            @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+            <x-responsive-nav-link :href="route('current-accounts.dashboard')" :active="request()->routeIs('current-accounts.dashboard')">
+                &nbsp;&nbsp;↳ Dashboard comptable
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('current-accounts.report')" :active="request()->routeIs('current-accounts.report')">
+                &nbsp;&nbsp;↳ Rapport financier
+            </x-responsive-nav-link>
+            @endif
+
+            <x-responsive-nav-link :href="route('savings-accounts.index')" :active="request()->routeIs('savings-accounts.index')">
+                💰 Comptes Épargne
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('savings-accounts.create')" :active="request()->routeIs('savings-accounts.create')">
+                &nbsp;&nbsp;↳ Ouvrir un compte
+            </x-responsive-nav-link>
+            @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+            <x-responsive-nav-link :href="route('savings-accounts.dashboard')" :active="request()->routeIs('savings-accounts.dashboard')">
+                &nbsp;&nbsp;↳ Dashboard comptable
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('savings-accounts.report')" :active="request()->routeIs('savings-accounts.report')">
+                &nbsp;&nbsp;↳ Rapport financier
+            </x-responsive-nav-link>
+            @endif
             @if(Auth::user()->isAdmin() || Auth::user()->isManager())
             <x-responsive-nav-link :href="route('branches.index')" :active="request()->routeIs('branches.*')">
                 Branches

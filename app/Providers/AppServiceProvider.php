@@ -6,10 +6,14 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use App\Models\AccountTransaction;
+use App\Models\CurrentAccountTransaction;
+use App\Models\SavingsAccountTransaction;
 use App\Models\Transfer;
 use App\Policies\UserPolicy;
 use App\Policies\TransferPolicy;
 use App\Observers\AccountTransactionObserver;
+use App\Observers\CurrentAccountTransactionObserver;
+use App\Observers\SavingsAccountTransactionObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,5 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Enregistrer les observers
         AccountTransaction::observe(AccountTransactionObserver::class);
+        CurrentAccountTransaction::observe(CurrentAccountTransactionObserver::class);
+        SavingsAccountTransaction::observe(SavingsAccountTransactionObserver::class);
     }
 }

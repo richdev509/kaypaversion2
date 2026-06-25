@@ -355,27 +355,94 @@ class ClientController extends Controller
             'selfie' => 'required|string',
         ]);
 
-        foreach (['front', 'back', 'selfie'] as $type) {
-            // Récupérer les données base64
-            $data = $validated[$type];
+        try {
+            // ✅ Créer le répertoire s'il n'existe pas
+            $directory = 'clients/pieces';
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory, 0775, true);
+                \Log::info("Répertoire créé: {$directory}");
+            }
 
-            // Retirer le préfixe data:image
-            $data = preg_replace('#^data:image/\w+;base64,#i', '', $data);
+            // ✅ Traiter une photo à la fois pour économiser la mémoire
+            foreach (['front', 'back', 'selfie'] as $type) {
+                // Récupérer les données base64
+                $data = $validated[$type];
 
-            // Décoder base64
-            $image = base64_decode($data);
+                // ✅ Vérifier la taille base64 AVANT décodage (limite 10 MB après compression)
+                $base64Size = strlen($data);
+                $estimatedSize = ($base64Size * 3) / 4; // Taille image décodée
 
-            // Générer nom de fichier
-            $filename = "client_{$token}_{$type}.jpg";
+                if ($estimatedSize > 10 * 1024 * 1024) { // 10 MB max (déjà compressée côté client)
+                    \Log::warning("Photo {$type} trop volumineuse", [
+                        'base64_size' => round($base64Size / 1024 / 1024, 2) . ' MB',
+                        'estimated_size' => round($estimatedSize / 1024 / 1024, 2) . ' MB'
+                    ]);
 
-            // Sauvegarder dans storage/app/public/clients/pieces/
-            Storage::disk('public')->put("clients/pieces/{$filename}", $image);
+                    return response()->json([
+                        'success' => false,
+                        'message' => "La photo {$type} est trop volumineuse (max 10 MB)"
+                    ], 413);
+                }
+
+                // Retirer le préfixe data:image
+                $data = preg_replace('#^data:image/\w+;base64,#i', '', $data);
+
+                // Décoder base64
+                $image = base64_decode($data, true);
+
+                if ($image === false) {
+                    \Log::error("Échec décodage base64 pour {$type}");
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Erreur de décodage pour la photo {$type}"
+                    ], 400);
+                }
+
+                // Générer nom de fichier
+                $filename = "client_{$token}_{$type}.jpg";
+                $filepath = "{$directory}/{$filename}";
+
+                // ✅ Sauvegarder avec vérification
+                $saved = Storage::disk('public')->put($filepath, $image);
+
+                if (!$saved) {
+                    \Log::error("Échec sauvegarde fichier", [
+                        'filepath' => $filepath,
+                        'size' => round(strlen($image) / 1024 / 1024, 2) . ' MB'
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Erreur lors de la sauvegarde de {$type}"
+                    ], 500);
+                }
+
+                // ✅ Libérer la mémoire immédiatement
+                unset($data, $image);
+
+                \Log::info("Photo {$type} sauvegardée", [
+                    'filepath' => $filepath,
+                    'memory_used' => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Photos enregistrées avec succès!'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Erreur scanUpload', [
+                'token' => $token,
+                'error' => $e->getMessage(),
+                'memory_used' => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB'
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur serveur lors de l\'upload des photos'
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Photos enregistrées avec succès!'
-        ]);
     }
 
     /**

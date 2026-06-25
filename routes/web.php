@@ -165,7 +165,72 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [\App\Http\Controllers\OnlinePaymentController::class, 'index'])->name('index');
         Route::get('/{transaction}', [\App\Http\Controllers\OnlinePaymentController::class, 'show'])->name('show');
         Route::get('/export/csv', [\App\Http\Controllers\OnlinePaymentController::class, 'export'])->name('export');
+        Route::post('/recalculate', [\App\Http\Controllers\OnlinePaymentController::class, 'recalculate'])->name('recalculate');
         Route::get('/api/stats', [\App\Http\Controllers\OnlinePaymentController::class, 'apiStats'])->name('api.stats');
+    });
+
+    // Routes Comptes Courants
+    Route::prefix('current-accounts')->name('current-accounts.')->group(function () {
+        // Routes fixes en premier (avant les routes paramétriques /{currentAccount})
+        Route::get('/',           [\App\Http\Controllers\CurrentAccountController::class, 'index'])->name('index');
+        Route::get('/create',     [\App\Http\Controllers\CurrentAccountController::class, 'create'])->name('create');
+        Route::post('/',          [\App\Http\Controllers\CurrentAccountController::class, 'store'])->name('store');
+
+        // Dashboard comptable — admin + comptable
+        Route::get('/dashboard',  [\App\Http\Controllers\CurrentAccountController::class, 'dashboard'])
+            ->middleware('role:admin|comptable')->name('dashboard');
+
+        // Rapport financier personnalisé — admin + comptable
+        Route::get('/report',     [\App\Http\Controllers\CurrentAccountController::class, 'report'])
+            ->middleware('role:admin|comptable')->name('report');
+
+        // Admin uniquement — routes fixes à déclarer avant /{currentAccount}
+        Route::get('/settings',   [\App\Http\Controllers\CurrentAccountController::class, 'settings'])
+            ->middleware('role:admin')->name('settings');
+        Route::put('/settings',   [\App\Http\Controllers\CurrentAccountController::class, 'updateSettings'])
+            ->middleware('role:admin')->name('settings.update');
+
+        // Routes paramétriques — tous rôles (agent, admin, comptable)
+        Route::get('/{currentAccount}',           [\App\Http\Controllers\CurrentAccountController::class, 'show'])->name('show');
+        Route::get('/{currentAccount}/deposit',   [\App\Http\Controllers\CurrentAccountController::class, 'depositForm'])->name('deposit.form');
+        Route::post('/{currentAccount}/deposit',  [\App\Http\Controllers\CurrentAccountController::class, 'deposit'])->name('deposit');
+        Route::get('/{currentAccount}/withdraw',  [\App\Http\Controllers\CurrentAccountController::class, 'withdrawForm'])->name('withdraw.form');
+        Route::post('/{currentAccount}/withdraw', [\App\Http\Controllers\CurrentAccountController::class, 'withdraw'])->name('withdraw');
+
+        // Changement de statut — admin + comptable uniquement
+        Route::patch('/{currentAccount}/status',  [\App\Http\Controllers\CurrentAccountController::class, 'updateStatus'])
+            ->middleware('role:admin|comptable')->name('status');
+    });
+
+    // Routes Comptes Épargne
+    Route::prefix('savings-accounts')->name('savings-accounts.')->group(function () {
+        // Routes fixes en premier (avant les routes paramétriques /{savingsAccount})
+        Route::get('/',           [\App\Http\Controllers\SavingsAccountController::class, 'index'])->name('index');
+        Route::get('/create',     [\App\Http\Controllers\SavingsAccountController::class, 'create'])->name('create');
+        Route::post('/',          [\App\Http\Controllers\SavingsAccountController::class, 'store'])->name('store');
+
+        // Dashboard + rapport — admin + comptable
+        Route::get('/dashboard',  [\App\Http\Controllers\SavingsAccountController::class, 'dashboard'])
+            ->middleware('role:admin|comptable')->name('dashboard');
+        Route::get('/report',     [\App\Http\Controllers\SavingsAccountController::class, 'report'])
+            ->middleware('role:admin|comptable')->name('report');
+
+        // Admin uniquement
+        Route::get('/settings',   [\App\Http\Controllers\SavingsAccountController::class, 'settings'])
+            ->middleware('role:admin')->name('settings');
+        Route::put('/settings',   [\App\Http\Controllers\SavingsAccountController::class, 'updateSettings'])
+            ->middleware('role:admin')->name('settings.update');
+
+        // Routes paramétriques — tous rôles
+        Route::get('/{savingsAccount}',           [\App\Http\Controllers\SavingsAccountController::class, 'show'])->name('show');
+        Route::get('/{savingsAccount}/deposit',   [\App\Http\Controllers\SavingsAccountController::class, 'depositForm'])->name('deposit.form');
+        Route::post('/{savingsAccount}/deposit',  [\App\Http\Controllers\SavingsAccountController::class, 'deposit'])->name('deposit');
+        Route::get('/{savingsAccount}/withdraw',  [\App\Http\Controllers\SavingsAccountController::class, 'withdrawForm'])->name('withdraw.form');
+        Route::post('/{savingsAccount}/withdraw', [\App\Http\Controllers\SavingsAccountController::class, 'withdraw'])->name('withdraw');
+
+        // Changement de statut — admin + comptable uniquement
+        Route::patch('/{savingsAccount}/status',  [\App\Http\Controllers\SavingsAccountController::class, 'updateStatus'])
+            ->middleware('role:admin|comptable')->name('status');
     });
 
     // Routes Transferts Locaux

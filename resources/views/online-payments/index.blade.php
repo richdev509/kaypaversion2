@@ -5,6 +5,16 @@
                 💳 Paiements en Ligne - Dashboard
             </h2>
             <div class="flex gap-2">
+                @if(auth()->user()->hasRole('admin'))
+                <form method="POST" action="{{ route('online-payments.recalculate') }}" class="inline">
+                    @csrf
+                    <button type="submit"
+                            onclick="return confirm('Voulez-vous vraiment recalculer la balance ?')"
+                            class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition">
+                        🔄 Recalculer Balance
+                    </button>
+                </form>
+                @endif
                 <a href="{{ route('online-payments.export', request()->all()) }}"
                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
                     📥 Exporter CSV
