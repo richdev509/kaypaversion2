@@ -395,6 +395,75 @@
             </div>
         </div>
 
+        {{-- ═══ SECTION : BUSINESS ═══ --}}
+        <p x-show="!collapsed"
+           class="px-3 pt-4 pb-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            Business
+        </p>
+        <div x-show="collapsed" class="pt-3 pb-1 mx-2 border-t border-gray-200 dark:border-gray-700"></div>
+
+        {{-- ─── Business (accordion) ─── --}}
+        @php
+            $bizActive = request()->routeIs('business.*') || request()->routeIs('school-programs.*');
+        @endphp
+        <div x-data="{ open: {{ $bizActive ? 'true' : 'false' }} }">
+            <button @click="collapsed ? (window.location.href = '{{ route('business.entities.index') }}') : (open = !open)"
+                    title="Business"
+                    class="w-full flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                           {{ $bizActive
+                              ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+                    :class="collapsed ? 'justify-center px-2' : 'justify-between px-3'">
+                <span class="flex items-center" :class="collapsed ? '' : 'gap-2.5'">
+                    <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <span x-show="!collapsed" class="truncate">Business</span>
+                </span>
+                <svg x-show="!collapsed"
+                     class="w-3.5 h-3.5 transition-transform duration-150 shrink-0 text-gray-400"
+                     :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+            <div x-show="open && !collapsed" x-transition
+                 class="mt-0.5 ml-3 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
+                <a href="{{ route('business.entities.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('business.entities.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    🏢 Entreprises
+                </a>
+                <a href="{{ route('business.credit.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('business.credit.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    💳 Crédit
+                </a>
+                <a href="{{ route('business.credit.alerts') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('business.credit.alerts') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    ⚠️ Alertes Crédit
+                </a>
+                <a href="{{ route('business.payroll.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('business.payroll.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    💼 Payroll
+                </a>
+                @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+                <a href="{{ route('business.credit.plans') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('business.credit.plans') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📊 Plans de taux
+                </a>
+                <a href="{{ route('school-programs.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('school-programs.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    🎓 Programme Scolaire
+                </a>
+                @endif
+            </div>
+        </div>
+
         {{-- ═══ SECTION : ADMINISTRATION ═══ --}}
         @if(Auth::user()->isAdmin() || Auth::user()->isManager())
         @php

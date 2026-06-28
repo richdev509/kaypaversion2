@@ -328,6 +328,121 @@
                 </div>
             </div>
 
+            @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+            <!-- Programme Scolaire -->
+            @php
+                $schoolProgramsActifs      = DB::table('school_programs')->where('status', 'actif')->count();
+                $schoolTotalInscrits       = DB::table('school_program_enrollments')->count();
+                $schoolCouponsActifs       = DB::table('school_program_enrollments')->where('coupon_status', 'active')->count();
+                $schoolCouponsUtilisesAuj  = DB::table('school_program_enrollments')
+                                                ->where('coupon_status', 'used')
+                                                ->whereDate('used_at', today())
+                                                ->count();
+                $schoolProgrammesCourants  = DB::table('school_programs')
+                                                ->where('status', 'actif')
+                                                ->orderByDesc('inscription_debut')
+                                                ->limit(5)
+                                                ->get();
+            @endphp
+            <div class="mt-6 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            🎓 Programme Scolaire
+                        </h3>
+                        <a href="{{ route('school-programs.index') }}"
+                           class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                            Gérer les programmes →
+                        </a>
+                    </div>
+
+                    {{-- KPI cards --}}
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+                        <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
+                            <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Programmes actifs</p>
+                            <p class="text-3xl font-bold text-indigo-700 dark:text-indigo-300 mt-1">{{ $schoolProgramsActifs }}</p>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                            <p class="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Total inscrits</p>
+                            <p class="text-3xl font-bold text-green-700 dark:text-green-300 mt-1">{{ $schoolTotalInscrits }}</p>
+                        </div>
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                            <p class="text-xs font-medium text-yellow-600 dark:text-yellow-400 uppercase tracking-wide">Coupons actifs</p>
+                            <p class="text-3xl font-bold text-yellow-700 dark:text-yellow-300 mt-1">{{ $schoolCouponsActifs }}</p>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                            <p class="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wide">Utilisés aujourd'hui</p>
+                            <p class="text-3xl font-bold text-purple-700 dark:text-purple-300 mt-1">{{ $schoolCouponsUtilisesAuj }}</p>
+                        </div>
+                    </div>
+
+                    @if($schoolProgrammesCourants->isNotEmpty())
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b border-gray-200 dark:border-gray-700">
+                                    <th class="pb-2 pr-4">Programme</th>
+                                    <th class="pb-2 pr-4">Inscription</th>
+                                    <th class="pb-2 pr-4">Coupons actifs</th>
+                                    <th class="pb-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                @foreach($schoolProgrammesCourants as $sp)
+                                @php
+                                    $spInscrits = DB::table('school_program_enrollments')
+                                        ->where('school_program_id', $sp->id)
+                                        ->where('coupon_status', 'active')
+                                        ->count();
+                                    $now = now();
+                                    $inscriptionOuverte = $sp->inscription_debut && $sp->inscription_fin
+                                        && $now->between(\Carbon\Carbon::parse($sp->inscription_debut), \Carbon\Carbon::parse($sp->inscription_fin));
+                                @endphp
+                                <tr>
+                                    <td class="py-2.5 pr-4 font-medium text-gray-900 dark:text-gray-100">
+                                        {{ $sp->name }}
+                                        @if($inscriptionOuverte)
+                                            <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">Inscriptions ouvertes</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2.5 pr-4 text-gray-500 dark:text-gray-400">
+                                        {{ \Carbon\Carbon::parse($sp->inscription_debut)->format('d/m/Y') }}
+                                        → {{ \Carbon\Carbon::parse($sp->inscription_fin)->format('d/m/Y') }}
+                                    </td>
+                                    <td class="py-2.5 pr-4 font-semibold text-gray-900 dark:text-gray-100">{{ $spInscrits }}</td>
+                                    <td class="py-2.5 text-right">
+                                        <a href="{{ route('school-programs.show', $sp->id) }}"
+                                           class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                                            Détail →
+                                        </a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Aucun programme scolaire actif.
+                        <a href="{{ route('school-programs.create') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Créer un programme →</a>
+                    </p>
+                    @endif
+
+                    {{-- Actions rapides programme --}}
+                    <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-3">
+                        <a href="{{ route('school-programs.create') }}"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
+                            ➕ Nouveau programme
+                        </a>
+                        <a href="{{ route('coupon.verify.form') }}"
+                           target="_blank"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 transition">
+                            🔍 Page vérification coupon
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Info système -->
             <div class="mt-6 bg-gray-50 dark:bg-gray-900/50 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-4 text-center">

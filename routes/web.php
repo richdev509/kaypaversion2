@@ -3,11 +3,23 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Business\BusinessEntityController;
+use App\Http\Controllers\Business\BusinessCurrentAccountController;
+use App\Http\Controllers\Business\BusinessCreditController;
+use App\Http\Controllers\Business\BusinessPayrollController;
+use App\Http\Controllers\Business\BusinessSavingsAccountController;
 
 // Page d'accueil publique
 Route::get('/', function () {
     return view('welcome-kaypa');
 })->name('home');
+
+// Routes publiques — Vérification coupon Programme Scolaire
+Route::prefix('coupon')->name('coupon.')->group(function () {
+    Route::get('/verifier',  [\App\Http\Controllers\CouponVerificationController::class, 'showVerifyForm'])->name('verify.form');
+    Route::post('/verifier', [\App\Http\Controllers\CouponVerificationController::class, 'verify'])->name('verify');
+    Route::post('/utiliser', [\App\Http\Controllers\CouponVerificationController::class, 'use'])->name('use');
+});
 
 // Routes publiques pour partenariat
 Route::prefix('partenaire')->name('affiliate.')->group(function () {
@@ -41,8 +53,9 @@ Route::middleware('auth')->group(function () {
     })->name('profile.destroy');
 
     // Routes Clients
-    Route::resource('clients', \App\Http\Controllers\ClientController::class);
     Route::get('/clients-search', [\App\Http\Controllers\ClientController::class, 'search'])->name('clients.search');
+    Route::get('/clients/autocomplete', [\App\Http\Controllers\ClientController::class, 'autocomplete'])->name('clients.autocomplete')->middleware('throttle:30,1');
+    Route::resource('clients', \App\Http\Controllers\ClientController::class);
 
     // Routes vérification KYC
     Route::get('/clients/{client}/verify-kyc', [\App\Http\Controllers\ClientController::class, 'verifyKyc'])->name('clients.verify-kyc');
@@ -272,6 +285,61 @@ Route::middleware('auth')->group(function () {
         Route::post('/{id}/approve', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'approve'])->name('approve');
         Route::post('/{id}/reject', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'reject'])->name('reject');
     });
+
+    // ── Module Business ──────────────────────────────────────────────────────
+    Route::prefix('business')->name('business.')->group(function () {
+
+        // Comptes épargne KEB  (avant /{entity} pour éviter conflit)
+        Route::get('/keb/{account}',             [BusinessSavingsAccountController::class, 'show'])->name('keb.show');
+        Route::get('/keb/{account}/deposit',     [BusinessSavingsAccountController::class, 'depositForm'])->name('keb.deposit.form');
+        Route::post('/keb/{account}/deposit',    [BusinessSavingsAccountController::class, 'deposit'])->name('keb.deposit');
+        Route::get('/keb/{account}/withdraw',    [BusinessSavingsAccountController::class, 'withdrawForm'])->name('keb.withdraw.form');
+        Route::post('/keb/{account}/withdraw',   [BusinessSavingsAccountController::class, 'withdraw'])->name('keb.withdraw');
+
+        // Comptes courants KCB  (avant /{entity})
+        Route::get('/kcb/{account}',             [BusinessCurrentAccountController::class, 'show'])->name('kcb.show');
+        Route::get('/kcb/{account}/deposit',     [BusinessCurrentAccountController::class, 'depositForm'])->name('kcb.deposit.form');
+        Route::post('/kcb/{account}/deposit',    [BusinessCurrentAccountController::class, 'deposit'])->name('kcb.deposit');
+        Route::get('/kcb/{account}/withdraw',    [BusinessCurrentAccountController::class, 'withdrawForm'])->name('kcb.withdraw.form');
+        Route::post('/kcb/{account}/withdraw',   [BusinessCurrentAccountController::class, 'withdraw'])->name('kcb.withdraw');
+
+        // Crédit  (avant /{entity})
+        Route::get('/credit/plans',              [BusinessCreditController::class, 'plans'])
+            ->middleware('role:admin')->name('credit.plans');
+        Route::get('/credit/alerts',             [BusinessCreditController::class, 'alerts'])->name('credit.alerts');
+        Route::get('/credit',                    [BusinessCreditController::class, 'index'])->name('credit.index');
+        Route::get('/credit/{credit}',           [BusinessCreditController::class, 'show'])->name('credit.show');
+        Route::post('/credit/{credit}/approve',  [BusinessCreditController::class, 'approve'])
+            ->middleware('role:admin|comptable')->name('credit.approve');
+        Route::post('/credit/{credit}/interest', [BusinessCreditController::class, 'chargeInterest'])
+            ->middleware('role:admin|comptable')->name('credit.interest');
+        Route::get('/alerts/{alert}',            [BusinessCreditController::class, 'showAlert'])->name('credit.alert.show');
+        Route::post('/alerts/{alert}/action',    [BusinessCreditController::class, 'logAction'])
+            ->middleware('role:admin|comptable')->name('credit.alert.action');
+
+        // Payroll  (avant /{entity})
+        Route::get('/payroll/employees',         [BusinessPayrollController::class, 'employees'])->name('payroll.employees');
+        Route::get('/payroll',                   [BusinessPayrollController::class, 'index'])->name('payroll.index');
+        Route::get('/payroll/{batch}',           [BusinessPayrollController::class, 'show'])->name('payroll.show');
+        Route::post('/payroll/{batch}/approve',  [BusinessPayrollController::class, 'approve'])
+            ->middleware('role:admin|comptable')->name('payroll.approve');
+
+        // Entités  (routes avec /{entity} en dernier — wildcard)
+        Route::get('/',                      [BusinessEntityController::class, 'index'])->name('entities.index');
+        Route::get('/create',                [BusinessEntityController::class, 'create'])->name('entities.create');
+        Route::post('/',                     [BusinessEntityController::class, 'store'])->name('entities.store');
+        Route::get('/{entity}/edit',         [BusinessEntityController::class, 'edit'])->name('entities.edit');
+        Route::patch('/{entity}/kyc',        [BusinessEntityController::class, 'verifyKyc'])
+            ->middleware('role:admin|comptable')->name('entities.kyc');
+        Route::patch('/{entity}/status',     [BusinessEntityController::class, 'updateStatus'])
+            ->middleware('role:admin|comptable')->name('entities.status');
+        Route::post('/{entity}/kcb',         [BusinessEntityController::class, 'openCurrentAccount'])
+            ->middleware('role:admin|comptable')->name('entities.kcb.open');
+        Route::post('/{entity}/keb',         [BusinessEntityController::class, 'openSavingsAccount'])
+            ->middleware('role:admin|comptable')->name('entities.keb.open');
+        Route::patch('/{entity}',            [BusinessEntityController::class, 'update'])->name('entities.update');
+        Route::get('/{entity}',              [BusinessEntityController::class, 'show'])->name('entities.show');
+    });
 });
 
 // Routes publiques pour scan mobile (pas d'authentification requise)
@@ -325,6 +393,19 @@ Route::get('/test-db', function () {
             'error' => $e->getMessage(),
         ], 500);
     }
+});
+
+// Module Programme Scolaire (Admin)
+Route::middleware(['auth', 'role:admin|comptable'])->prefix('school-programs')->name('school-programs.')->group(function () {
+    Route::get('/',                           [\App\Http\Controllers\SchoolProgramController::class, 'index'])->name('index');
+    Route::get('/create',                     [\App\Http\Controllers\SchoolProgramController::class, 'create'])->name('create');
+    Route::post('/',                          [\App\Http\Controllers\SchoolProgramController::class, 'store'])->name('store');
+    Route::get('/{program}',                  [\App\Http\Controllers\SchoolProgramController::class, 'show'])->name('show');
+    Route::get('/{program}/edit',             [\App\Http\Controllers\SchoolProgramController::class, 'edit'])->name('edit');
+    Route::patch('/{program}',                [\App\Http\Controllers\SchoolProgramController::class, 'update'])->name('update');
+    Route::delete('/{program}',               [\App\Http\Controllers\SchoolProgramController::class, 'destroy'])->name('destroy');
+    Route::post('/{program}/enroll/{client}', [\App\Http\Controllers\SchoolProgramController::class, 'enroll'])->name('enroll');
+    Route::post('/{program}/bulk-enroll',     [\App\Http\Controllers\SchoolProgramController::class, 'bulkEnroll'])->name('bulk-enroll');
 });
 
 // Routes Monitoring des Activités (Admin uniquement)

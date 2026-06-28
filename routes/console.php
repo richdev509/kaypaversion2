@@ -18,3 +18,9 @@ Artisan::command('inspire', function () {
     ->monthlyOn(1, '09:00')
     ->withoutOverlapping()
     ->runInBackground();
+
+// Libération des blocages de solde Programme Scolaire — quotidien à 06h00
+\Illuminate\Support\Facades\Schedule::command('school:release-blocks')
+    ->dailyAt('06:00')
+    ->withoutOverlapping()
+    ->runInBackground();

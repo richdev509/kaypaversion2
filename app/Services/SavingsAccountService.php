@@ -100,14 +100,22 @@ class SavingsAccountService
             $fresh        = SavingsAccount::lockForUpdate()->findOrFail($account->id);
             $soldeMinimum = (float) AppSetting::get('sce_solde_minimum', 500);
 
-            if ($amount > $fresh->balance) {
-                throw new \RuntimeException('Solde insuffisant pour effectuer ce retrait.');
+            $soldeDisponible = (float) $fresh->balance - (float) ($fresh->balance_blocked ?? 0);
+
+            if ($amount > $soldeDisponible) {
+                $info = ($fresh->balance_blocked ?? 0) > 0
+                    ? " ({$fresh->balance_blocked} GDS bloqués — Programme Scolaire)"
+                    : '';
+                throw new \RuntimeException(
+                    "Solde disponible insuffisant. Disponible : " .
+                    number_format($soldeDisponible, 2) . " GDS{$info}."
+                );
             }
 
-            if (($fresh->balance - $amount) < $soldeMinimum) {
+            if (($soldeDisponible - $amount) < $soldeMinimum) {
                 throw new \RuntimeException(
                     "Le solde ne peut pas descendre en dessous de {$soldeMinimum} GDS. " .
-                    "Montant maximum retirable : " . number_format($fresh->balance - $soldeMinimum, 2) . " GDS."
+                    "Montant maximum retirable : " . number_format($soldeDisponible - $soldeMinimum, 2) . " GDS."
                 );
             }
 

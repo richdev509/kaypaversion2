@@ -11,6 +11,7 @@ class SavingsAccount extends Model
         'client_id',
         'branch_id',
         'balance',
+        'balance_blocked',
         'status',
         'last_interest_at',
         'created_by',
@@ -18,6 +19,7 @@ class SavingsAccount extends Model
 
     protected $casts = [
         'balance'          => 'decimal:2',
+        'balance_blocked'  => 'decimal:2',
         'last_interest_at' => 'datetime',
     ];
 
@@ -59,6 +61,16 @@ class SavingsAccount extends Model
     public function transactions()
     {
         return $this->hasMany(SavingsAccountTransaction::class);
+    }
+
+    public function programEnrollments()
+    {
+        return $this->hasMany(SchoolProgramEnrollment::class);
+    }
+
+    public function getBalanceDisponibleAttribute(): float
+    {
+        return (float) $this->balance - (float) ($this->balance_blocked ?? 0);
     }
 
     public function scopeActive($query)

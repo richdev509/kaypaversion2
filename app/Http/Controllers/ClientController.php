@@ -9,6 +9,7 @@ use App\Models\Commune;
 use App\Models\City;
 use App\Services\TokenService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -59,6 +60,31 @@ class ClientController extends Controller
             ->appends(['search' => $search]);
 
         return view('clients.search', compact('clients', 'search'));
+    }
+
+    public function autocomplete(Request $request)
+    {
+        $q = trim($request->input('q', ''));
+
+        if (strlen($q) < 2 || strlen($q) > 100) {
+            return response()->json([]);
+        }
+
+        $clients = Client::search($q)
+            ->select('id', 'first_name', 'last_name', 'phone', 'client_id', 'card_number', 'status_kyc')
+            ->limit(10)
+            ->get()
+            ->map(fn ($c) => [
+                'id'          => $c->id,
+                'label'       => trim("{$c->first_name} {$c->last_name}"),
+                'phone'       => $c->phone,
+                'client_id'   => $c->client_id,
+                'card_number' => $c->card_number,
+                'status_kyc'  => $c->status_kyc,
+                'kyc_ok'      => $c->status_kyc === 'verified',
+            ]);
+
+        return response()->json($clients);
     }
 
     /**
@@ -359,8 +385,8 @@ class ClientController extends Controller
             // ✅ Créer le répertoire s'il n'existe pas
             $directory = 'clients/pieces';
             if (!Storage::disk('public')->exists($directory)) {
-                Storage::disk('public')->makeDirectory($directory, 0775, true);
-                \Log::info("Répertoire créé: {$directory}");
+                Storage::disk('public')->makeDirectory($directory);
+                Log::info("Répertoire créé: {$directory}");
             }
 
             // ✅ Traiter une photo à la fois pour économiser la mémoire
@@ -373,7 +399,7 @@ class ClientController extends Controller
                 $estimatedSize = ($base64Size * 3) / 4; // Taille image décodée
 
                 if ($estimatedSize > 10 * 1024 * 1024) { // 10 MB max (déjà compressée côté client)
-                    \Log::warning("Photo {$type} trop volumineuse", [
+                    Log::warning("Photo {$type} trop volumineuse", [
                         'base64_size' => round($base64Size / 1024 / 1024, 2) . ' MB',
                         'estimated_size' => round($estimatedSize / 1024 / 1024, 2) . ' MB'
                     ]);
@@ -391,7 +417,7 @@ class ClientController extends Controller
                 $image = base64_decode($data, true);
 
                 if ($image === false) {
-                    \Log::error("Échec décodage base64 pour {$type}");
+                    Log::error("Échec décodage base64 pour {$type}");
                     return response()->json([
                         'success' => false,
                         'message' => "Erreur de décodage pour la photo {$type}"
@@ -406,7 +432,7 @@ class ClientController extends Controller
                 $saved = Storage::disk('public')->put($filepath, $image);
 
                 if (!$saved) {
-                    \Log::error("Échec sauvegarde fichier", [
+                    Log::error("Échec sauvegarde fichier", [
                         'filepath' => $filepath,
                         'size' => round(strlen($image) / 1024 / 1024, 2) . ' MB'
                     ]);
@@ -420,7 +446,7 @@ class ClientController extends Controller
                 // ✅ Libérer la mémoire immédiatement
                 unset($data, $image);
 
-                \Log::info("Photo {$type} sauvegardée", [
+                Log::info("Photo {$type} sauvegardée", [
                     'filepath' => $filepath,
                     'memory_used' => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB'
                 ]);
@@ -432,7 +458,7 @@ class ClientController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Erreur scanUpload', [
+            Log::error('Erreur scanUpload', [
                 'token' => $token,
                 'error' => $e->getMessage(),
                 'memory_used' => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB'
