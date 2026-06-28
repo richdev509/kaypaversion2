@@ -1,409 +1,541 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <img src="{{ asset('kaypa.png') }}" alt="Kaypa Logo" class="block h-9 w-auto">
-                    </a>
-                </div>
+{{-- ═══════════════════════════════════════════════════
+     OVERLAY mobile (clique → ferme sidebar)
+══════════════════════════════════════════════════════ --}}
+<div x-show="sidebarOpen" x-cloak
+     @click="sidebarOpen = false"
+     @resize.window="if (window.innerWidth >= 1024) sidebarOpen = false"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-40 lg:hidden">
+</div>
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    @if(Auth::user()->hasPermissionTo('dashboard.view'))
-                    <x-nav-link :href="route('dashboard.analytics')" :active="request()->routeIs('dashboard.analytics')">
-                        📊 Analytics
-                    </x-nav-link>
-                    @endif
-                    <x-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')">
-                        Clients
-                    </x-nav-link>
-                    <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
-                        Comptes
-                    </x-nav-link>
-                    @if(in_array(Auth::user()->role, ['admin', 'comptable']))
-                    <x-dropdown align="top" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('current-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
-                                <span>🏦 C. Courants</span>
-                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('current-accounts.index')" :active="request()->routeIs('current-accounts.index')">
-                                Liste des comptes
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('current-accounts.create')" :active="request()->routeIs('current-accounts.create')">
-                                Ouvrir un compte
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('current-accounts.dashboard')" :active="request()->routeIs('current-accounts.dashboard')">
-                                Dashboard comptable
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('current-accounts.report')" :active="request()->routeIs('current-accounts.report')">
-                                Rapport financier
-                            </x-dropdown-link>
-                            @if(Auth::user()->role === 'admin')
-                            <x-dropdown-link :href="route('current-accounts.settings')" :active="request()->routeIs('current-accounts.settings')">
-                                Paramètres
-                            </x-dropdown-link>
-                            @endif
-                        </x-slot>
-                    </x-dropdown>
-                    @else
-                    <x-dropdown align="top" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('current-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
-                                <span>🏦 C. Courants</span>
-                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('current-accounts.index')" :active="request()->routeIs('current-accounts.index')">
-                                Liste des comptes
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('current-accounts.create')" :active="request()->routeIs('current-accounts.create')">
-                                Ouvrir un compte
-                            </x-dropdown-link>
-                        </x-slot>
-                    </x-dropdown>
-                    @endif
+{{-- ═══════════════════════════════════════════════════
+     SIDEBAR
+     - Mobile  : overlay, toujours w-72, masqué par défaut
+     - Desktop : fixe, w-64 (expanded) ou w-16 (collapsed)
+══════════════════════════════════════════════════════ --}}
+<aside :class="[
+           sidebarOpen ? '!translate-x-0' : '',
+           collapsed    ? 'lg:w-16'        : 'lg:w-64'
+       ]"
+       class="fixed inset-y-0 left-0 z-50 w-72 h-screen -translate-x-full lg:translate-x-0
+              bg-white dark:bg-gray-900
+              border-r border-gray-200 dark:border-gray-700
+              flex flex-col transition-all duration-300 ease-in-out overflow-hidden">
 
-                    {{-- Compte Épargne --}}
-                    @if(in_array(Auth::user()->role, ['admin', 'comptable']))
-                    <x-dropdown align="top" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('savings-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
-                                <span>💰 C. Épargne</span>
-                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('savings-accounts.index')" :active="request()->routeIs('savings-accounts.index')">
-                                Liste des comptes
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('savings-accounts.create')" :active="request()->routeIs('savings-accounts.create')">
-                                Ouvrir un compte
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('savings-accounts.dashboard')" :active="request()->routeIs('savings-accounts.dashboard')">
-                                Dashboard comptable
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('savings-accounts.report')" :active="request()->routeIs('savings-accounts.report')">
-                                Rapport financier
-                            </x-dropdown-link>
-                            @if(Auth::user()->role === 'admin')
-                            <x-dropdown-link :href="route('savings-accounts.settings')" :active="request()->routeIs('savings-accounts.settings')">
-                                Paramètres
-                            </x-dropdown-link>
-                            @endif
-                        </x-slot>
-                    </x-dropdown>
-                    @else
-                    <x-dropdown align="top" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('savings-accounts.*') ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
-                                <span>💰 C. Épargne</span>
-                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('savings-accounts.index')" :active="request()->routeIs('savings-accounts.index')">
-                                Liste des comptes
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('savings-accounts.create')" :active="request()->routeIs('savings-accounts.create')">
-                                Ouvrir un compte
-                            </x-dropdown-link>
-                        </x-slot>
-                    </x-dropdown>
-                    @endif
+    {{-- ── En-tête : logo + boutons ── --}}
+    <div class="h-16 flex items-center border-b border-gray-200 dark:border-gray-700 shrink-0 transition-all duration-300"
+         :class="collapsed ? 'px-2 justify-center' : 'px-4 justify-between'">
 
-                    <!-- Menu déroulant Transferts -->
-                    @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
-                    <x-dropdown align="top" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-700 transition duration-150 ease-in-out">
-                                <span>💸 Transferts</span>
-                                <svg class="ms-1 h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('transfers.index')">
-                                🔍 Recherche Transfert
-                            </x-dropdown-link>
-                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-                            <x-dropdown-link :href="route('transfers.all')">
-                                📋 Liste Complète
-                            </x-dropdown-link>
-                            @endif
-                            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
-                            <x-dropdown-link :href="route('transfers.stats')">
-                                📊 Statistiques
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('transfers.reports')">
-                                📈 Rapports (CSV/PDF)
-                            </x-dropdown-link>
-                            @endif
-                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-                            <x-dropdown-link :href="route('transfers.disputes')">
-                                ⚠️ Gestion des Litiges
-                            </x-dropdown-link>
-                            @endif
-                            @if(Auth::user()->isAdmin())
-                            <x-dropdown-link :href="route('transfers.settings')">
-                                ⚙️ Paramètres
-                            </x-dropdown-link>
-                            @endif
-                        </x-slot>
-                    </x-dropdown>
-                    @endif
+        {{-- Logo mobile (toujours visible sur mobile, jamais sur desktop) --}}
+        <a href="{{ route('dashboard') }}"
+           class="lg:hidden flex items-center gap-2 min-w-0">
+            <img src="{{ asset('kaypa.png') }}" alt="Kaypa" class="h-9 w-auto shrink-0">
+        </a>
 
-                    @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
-                    <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
-                        Rapports
-                    </x-nav-link>
-                    @endif
+        {{-- Logo desktop (visible quand sidebar expanded, caché quand collapsed) --}}
+        <a href="{{ route('dashboard') }}"
+           class="hidden lg:flex items-center gap-2 min-w-0"
+           :class="collapsed ? '!hidden' : ''">
+            <img src="{{ asset('kaypa.png') }}" alt="Kaypa" class="h-9 w-auto shrink-0">
+        </a>
 
-                    @if(Auth::user()->hasPermissionTo('fund-movements.view'))
-                    <x-nav-link :href="route('fund-movements.index')" :active="request()->routeIs('fund-movements.*')">
-                        Gestion Financière
-                    </x-nav-link>
-                    @endif
+        {{-- Bouton collapse/expand — desktop uniquement (hidden lg:flex = jamais de conflit x-show) --}}
+        <button @click="toggle()"
+                :title="collapsed ? 'Développer le menu' : 'Réduire le menu'"
+                class="hidden lg:flex items-center justify-center w-8 h-8 rounded-md
+                       text-gray-400 dark:text-gray-500
+                       hover:text-gray-700 dark:hover:text-gray-200
+                       hover:bg-gray-100 dark:hover:bg-gray-800
+                       transition-colors shrink-0">
+            <svg class="w-4 h-4 transition-transform duration-300" :class="collapsed ? 'rotate-180' : ''"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+            </svg>
+        </button>
 
-                    @if(Auth::user()->hasPermissionTo('branch-cash.view'))
-                    <x-nav-link :href="route('branch-cash.index')" :active="request()->routeIs('branch-cash.*')">
-                        💰 Caisse
-                    </x-nav-link>
-                    @endif
-
-                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
-                    <x-nav-link :href="route('online-payments.index')" :active="request()->routeIs('online-payments.*')">
-                        💳 Paiements
-                    </x-nav-link>
-                    @endif
-
-                    @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
-                    <x-nav-link :href="route('affiliates.index')" :active="request()->routeIs('affiliates.*')">
-                        👥 Affiliés
-                    </x-nav-link>
-                    @endif
-
-                    @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
-                    <x-nav-link :href="route('client-access.index')" :active="request()->routeIs('client-access.*')">
-                        🔑 Accès
-                    </x-nav-link>
-                    @endif
-
-                    <!-- Menu déroulant Administration -->
-                    @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-                    <x-dropdown align="top" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-700 transition duration-150 ease-in-out">
-                                <span>⚙️ Administration</span>
-                                <svg class="ms-1 h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-                            <x-dropdown-link :href="route('branches.index')">
-                                🏢 Branches
-                            </x-dropdown-link>
-                            @endif
-                            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-                            <x-dropdown-link :href="route('users.index')">
-                                👤 Utilisateurs
-                            </x-dropdown-link>
-                            @endif
-                            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
-                            <x-dropdown-link :href="route('admin.withdrawals.index')">
-                                💰 Demandes de Retrait
-                            </x-dropdown-link>
-                            @endif
-                            @if(Auth::user()->isAdmin())
-                            <x-dropdown-link :href="route('admin.roles.index')">
-                                🔐 Rôles & Permissions
-                            </x-dropdown-link>
-                            @endif
-                            @if(Auth::user()->isAdmin())
-                            <x-dropdown-link :href="route('activity-logs.index')">
-                                📊 Monitoring
-                            </x-dropdown-link>
-                            @endif
-                        </x-slot>
-                    </x-dropdown>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
+        {{-- Bouton fermer — mobile uniquement, PAS de x-show (évite le conflit inline style vs lg:hidden) --}}
+        <button @click="sidebarOpen = false"
+                class="lg:hidden p-1.5 rounded-md text-gray-400
+                       hover:text-gray-600 dark:hover:text-gray-200
+                       hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
     </div>
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            @if(Auth::user()->hasPermissionTo('dashboard.view'))
-            <x-responsive-nav-link :href="route('dashboard.analytics')" :active="request()->routeIs('dashboard.analytics')">
-                📊 Analytics
-            </x-responsive-nav-link>
-            @endif
-            <x-responsive-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')">
-                Clients
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
-                Comptes
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('current-accounts.index')" :active="request()->routeIs('current-accounts.index')">
-                🏦 Comptes Courants
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('current-accounts.create')" :active="request()->routeIs('current-accounts.create')">
-                &nbsp;&nbsp;↳ Ouvrir un compte
-            </x-responsive-nav-link>
-            @if(in_array(Auth::user()->role, ['admin', 'comptable']))
-            <x-responsive-nav-link :href="route('current-accounts.dashboard')" :active="request()->routeIs('current-accounts.dashboard')">
-                &nbsp;&nbsp;↳ Dashboard comptable
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('current-accounts.report')" :active="request()->routeIs('current-accounts.report')">
-                &nbsp;&nbsp;↳ Rapport financier
-            </x-responsive-nav-link>
-            @endif
+    {{-- ── Navigation (scrollable) ── --}}
+    <nav class="flex-1 overflow-y-auto py-3 space-y-0.5" :class="collapsed ? 'px-1.5' : 'px-2'">
 
-            <x-responsive-nav-link :href="route('savings-accounts.index')" :active="request()->routeIs('savings-accounts.index')">
-                💰 Comptes Épargne
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('savings-accounts.create')" :active="request()->routeIs('savings-accounts.create')">
-                &nbsp;&nbsp;↳ Ouvrir un compte
-            </x-responsive-nav-link>
-            @if(in_array(Auth::user()->role, ['admin', 'comptable']))
-            <x-responsive-nav-link :href="route('savings-accounts.dashboard')" :active="request()->routeIs('savings-accounts.dashboard')">
-                &nbsp;&nbsp;↳ Dashboard comptable
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('savings-accounts.report')" :active="request()->routeIs('savings-accounts.report')">
-                &nbsp;&nbsp;↳ Rapport financier
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-            <x-responsive-nav-link :href="route('branches.index')" :active="request()->routeIs('branches.*')">
-                Branches
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->isAdmin() || Auth::user()->isManager())
-            <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
-                Utilisateurs
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->isAdmin())
-            <x-responsive-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.*')">
-                🔐 Rôles & Permissions
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
-            <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
-                Rapports
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->hasPermissionTo('fund-movements.view'))
-            <x-responsive-nav-link :href="route('fund-movements.index')" :active="request()->routeIs('fund-movements.*')">
-                Gestion Financière
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->hasPermissionTo('branch-cash.view'))
-            <x-responsive-nav-link :href="route('branch-cash.index')" :active="request()->routeIs('branch-cash.*')">
-                💰 Caisse Succursale
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
-            <x-responsive-nav-link :href="route('client-access.index')" :active="request()->routeIs('client-access.*')">
-                🔑 Accès Client
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
-            <x-responsive-nav-link :href="route('affiliates.index')" :active="request()->routeIs('affiliates.*')">
-                👥 Affiliés
-            </x-responsive-nav-link>
-            @endif
-            @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
-            <x-responsive-nav-link :href="route('online-payments.index')" :active="request()->routeIs('online-payments.*')">
-                💳 Paiements Online
-            </x-responsive-nav-link>
-            @endif
+        {{-- ═══ SECTION : PRINCIPAL ═══ --}}
+        <p x-show="!collapsed"
+           class="px-3 pt-1 pb-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            Principal
+        </p>
+
+        {{-- Dashboard --}}
+        @php $isDash = request()->routeIs('dashboard') && !request()->routeIs('dashboard.*'); @endphp
+        <a href="{{ route('dashboard') }}" @click="sidebarOpen = false" title="Dashboard"
+           class="flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                  {{ $isDash
+                     ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                     : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+           :class="collapsed ? 'justify-center px-2' : 'gap-2.5 px-3'">
+            <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span x-show="!collapsed" class="truncate">Dashboard</span>
+        </a>
+
+        {{-- Clients --}}
+        @php $isClients = request()->routeIs('clients.*'); @endphp
+        <a href="{{ route('clients.index') }}" @click="sidebarOpen = false" title="Clients"
+           class="flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                  {{ $isClients
+                     ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                     : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+           :class="collapsed ? 'justify-center px-2' : 'gap-2.5 px-3'">
+            <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span x-show="!collapsed" class="truncate">Clients</span>
+        </a>
+
+        {{-- Comptes --}}
+        @php $isAccounts = request()->routeIs('accounts.*'); @endphp
+        <a href="{{ route('accounts.index') }}" @click="sidebarOpen = false" title="Comptes"
+           class="flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                  {{ $isAccounts
+                     ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                     : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+           :class="collapsed ? 'justify-center px-2' : 'gap-2.5 px-3'">
+            <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+            </svg>
+            <span x-show="!collapsed" class="truncate">Comptes</span>
+        </a>
+
+        {{-- ═══ SECTION : COMPTES BANCAIRES ═══ --}}
+        <p x-show="!collapsed"
+           class="px-3 pt-4 pb-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            Comptes Bancaires
+        </p>
+        <div x-show="collapsed" class="pt-3 pb-1 mx-2 border-t border-gray-200 dark:border-gray-700"></div>
+
+        {{-- ─── C. Courants (accordion) ─── --}}
+        @php $ccActive = request()->routeIs('current-accounts.*'); @endphp
+        <div x-data="{ open: {{ $ccActive ? 'true' : 'false' }} }">
+            <button @click="collapsed ? (window.location.href = '{{ route('current-accounts.index') }}') : (open = !open)"
+                    title="Comptes Courants"
+                    class="w-full flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                           {{ $ccActive
+                              ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+                    :class="collapsed ? 'justify-center px-2' : 'justify-between px-3'">
+                <span class="flex items-center" :class="collapsed ? '' : 'gap-2.5'">
+                    <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                    <span x-show="!collapsed" class="truncate">C. Courants</span>
+                </span>
+                <svg x-show="!collapsed"
+                     class="w-3.5 h-3.5 transition-transform duration-150 shrink-0 text-gray-400"
+                     :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+            <div x-show="open && !collapsed" x-transition
+                 class="mt-0.5 ml-3 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
+                <a href="{{ route('current-accounts.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('current-accounts.index') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📋 Liste des comptes
+                </a>
+                @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+                <a href="{{ route('current-accounts.create') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    ➕ Ouvrir un compte
+                </a>
+                @endif
+                @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+                <a href="{{ route('current-accounts.dashboard') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('current-accounts.dashboard') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📊 Dashboard
+                </a>
+                <a href="{{ route('current-accounts.report') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('current-accounts.report') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📈 Rapport financier
+                </a>
+                @endif
+                @if(Auth::user()->role === 'admin')
+                <a href="{{ route('current-accounts.settings') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    ⚙️ Paramètres
+                </a>
+                @endif
+            </div>
         </div>
 
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+        {{-- ─── C. Épargne (accordion) ─── --}}
+        @php $ceActive = request()->routeIs('savings-accounts.*'); @endphp
+        <div x-data="{ open: {{ $ceActive ? 'true' : 'false' }} }">
+            <button @click="collapsed ? (window.location.href = '{{ route('savings-accounts.index') }}') : (open = !open)"
+                    title="Comptes Épargne"
+                    class="w-full flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                           {{ $ceActive
+                              ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+                    :class="collapsed ? 'justify-center px-2' : 'justify-between px-3'">
+                <span class="flex items-center" :class="collapsed ? '' : 'gap-2.5'">
+                    <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    <span x-show="!collapsed" class="truncate">C. Épargne</span>
+                </span>
+                <svg x-show="!collapsed"
+                     class="w-3.5 h-3.5 transition-transform duration-150 shrink-0 text-gray-400"
+                     :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+            <div x-show="open && !collapsed" x-transition
+                 class="mt-0.5 ml-3 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
+                <a href="{{ route('savings-accounts.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('savings-accounts.index') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📋 Liste des comptes
+                </a>
+                @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+                <a href="{{ route('savings-accounts.create') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    ➕ Ouvrir un compte
+                </a>
+                @endif
+                @if(in_array(Auth::user()->role, ['admin', 'comptable']))
+                <a href="{{ route('savings-accounts.dashboard') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('savings-accounts.dashboard') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📊 Dashboard
+                </a>
+                <a href="{{ route('savings-accounts.report') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('savings-accounts.report') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📈 Rapport financier
+                </a>
+                @endif
+                @if(Auth::user()->role === 'admin')
+                <a href="{{ route('savings-accounts.settings') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    ⚙️ Paramètres
+                </a>
+                @endif
+            </div>
+        </div>
+
+        {{-- ═══ SECTION : OPÉRATIONS ═══ --}}
+        <p x-show="!collapsed"
+           class="px-3 pt-4 pb-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            Opérations
+        </p>
+        <div x-show="collapsed" class="pt-3 pb-1 mx-2 border-t border-gray-200 dark:border-gray-700"></div>
+
+        {{-- ─── Transferts (accordion) ─── --}}
+        @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+        @php $trActive = request()->routeIs('transfers.*'); @endphp
+        <div x-data="{ open: {{ $trActive ? 'true' : 'false' }} }">
+            <button @click="collapsed ? (window.location.href = '{{ route('transfers.index') }}') : (open = !open)"
+                    title="Transferts"
+                    class="w-full flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                           {{ $trActive
+                              ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+                    :class="collapsed ? 'justify-center px-2' : 'justify-between px-3'">
+                <span class="flex items-center" :class="collapsed ? '' : 'gap-2.5'">
+                    <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                    <span x-show="!collapsed" class="truncate">Transferts</span>
+                </span>
+                <svg x-show="!collapsed"
+                     class="w-3.5 h-3.5 transition-transform duration-150 shrink-0 text-gray-400"
+                     :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+            <div x-show="open && !collapsed" x-transition
+                 class="mt-0.5 ml-3 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
+                <a href="{{ route('transfers.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    🔍 Recherche
+                </a>
+                @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+                <a href="{{ route('transfers.all') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    📋 Liste complète
+                </a>
+                @endif
+                @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                <a href="{{ route('transfers.stats') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    📊 Statistiques
+                </a>
+                <a href="{{ route('transfers.reports') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    📈 Rapports
+                </a>
+                @endif
+                @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+                <a href="{{ route('transfers.disputes') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    ⚠️ Litiges
+                </a>
+                @endif
+                @if(Auth::user()->isAdmin())
+                <a href="{{ route('transfers.settings') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors">
+                    ⚙️ Paramètres
+                </a>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- ─── Finance (accordion) ─── --}}
+        @php
+            $financeActive = request()->routeIs('reports.*')
+                          || request()->routeIs('fund-movements.*')
+                          || request()->routeIs('branch-cash.*')
+                          || request()->routeIs('online-payments.*')
+                          || request()->routeIs('affiliates.*')
+                          || request()->routeIs('client-access.*')
+                          || request()->routeIs('admin.withdrawals.*');
+        @endphp
+        <div x-data="{ open: {{ $financeActive ? 'true' : 'false' }} }">
+            <button @click="collapsed ? (window.location.href = '{{ route('reports.index') }}') : (open = !open)"
+                    title="Finance"
+                    class="w-full flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                           {{ $financeActive
+                              ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+                    :class="collapsed ? 'justify-center px-2' : 'justify-between px-3'">
+                <span class="flex items-center" :class="collapsed ? '' : 'gap-2.5'">
+                    <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span x-show="!collapsed" class="truncate">Finance</span>
+                </span>
+                <svg x-show="!collapsed"
+                     class="w-3.5 h-3.5 transition-transform duration-150 shrink-0 text-gray-400"
+                     :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+            <div x-show="open && !collapsed" x-transition
+                 class="mt-0.5 ml-3 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
+                @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+                <a href="{{ route('reports.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('reports.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📋 Rapports
+                </a>
+                @endif
+                @if(Auth::user()->hasPermissionTo('fund-movements.view'))
+                <a href="{{ route('fund-movements.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('fund-movements.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    💹 Gestion Financière
+                </a>
+                @endif
+                @if(Auth::user()->hasPermissionTo('branch-cash.view'))
+                <a href="{{ route('branch-cash.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('branch-cash.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    💵 Caisse Succursale
+                </a>
+                @endif
+                @if(Auth::user()->isAdmin() || Auth::user()->hasRole('comptable'))
+                <a href="{{ route('online-payments.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('online-payments.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    💳 Paiements Online
+                </a>
+                <a href="{{ route('affiliates.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('affiliates.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    👥 Affiliés
+                </a>
+                <a href="{{ route('admin.withdrawals.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('admin.withdrawals.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    💰 Demandes Retrait
+                </a>
+                @endif
+                @if(Auth::user()->isAdmin() || Auth::user()->isManager() || Auth::user()->isAgent())
+                <a href="{{ route('client-access.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('client-access.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    🔑 Accès Client
+                </a>
+                @endif
+            </div>
+        </div>
+
+        {{-- ═══ SECTION : ADMINISTRATION ═══ --}}
+        @if(Auth::user()->isAdmin() || Auth::user()->isManager())
+        @php
+            $adminActive = request()->routeIs('branches.*')
+                        || request()->routeIs('users.*')
+                        || request()->routeIs('admin.roles.*')
+                        || request()->routeIs('activity-logs.*')
+                        || request()->routeIs('dashboard.analytics');
+        @endphp
+        <p x-show="!collapsed"
+           class="px-3 pt-4 pb-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            Administration
+        </p>
+        <div x-show="collapsed" class="pt-3 pb-1 mx-2 border-t border-gray-200 dark:border-gray-700"></div>
+
+        <div x-data="{ open: {{ $adminActive ? 'true' : 'false' }} }">
+            <button @click="collapsed ? (window.location.href = '{{ route('branches.index') }}') : (open = !open)"
+                    title="Administration"
+                    class="w-full flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                           {{ $adminActive
+                              ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}"
+                    :class="collapsed ? 'justify-center px-2' : 'justify-between px-3'">
+                <span class="flex items-center" :class="collapsed ? '' : 'gap-2.5'">
+                    <svg style="width:1.1rem;height:1.1rem" class="shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span x-show="!collapsed" class="truncate">Administration</span>
+                </span>
+                <svg x-show="!collapsed"
+                     class="w-3.5 h-3.5 transition-transform duration-150 shrink-0 text-gray-400"
+                     :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+            <div x-show="open && !collapsed" x-transition
+                 class="mt-0.5 ml-3 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
+                @if(Auth::user()->hasPermissionTo('dashboard.view'))
+                <a href="{{ route('dashboard.analytics') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('dashboard.analytics') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    📊 Analytics
+                </a>
+                @endif
+                <a href="{{ route('branches.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('branches.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    🏢 Branches
+                </a>
+                <a href="{{ route('users.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('users.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    👤 Utilisateurs
+                </a>
+                @if(Auth::user()->isAdmin())
+                <a href="{{ route('admin.roles.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('admin.roles.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    🔐 Rôles & Permissions
+                </a>
+                <a href="{{ route('activity-logs.index') }}" @click="sidebarOpen = false"
+                   class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors
+                          {{ request()->routeIs('activity-logs.*') ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200' }}">
+                    🔎 Monitoring
+                </a>
+                @endif
+            </div>
+        </div>
+        @endif
+
+    </nav>
+
+    {{-- ── Bas du sidebar : profil + déconnexion toujours visibles ── --}}
+    <div class="border-t border-gray-200 dark:border-gray-700 shrink-0">
+
+        {{-- Mode EXPANDED : info + boutons côte à côte ── --}}
+        <div x-show="!collapsed" class="p-3 space-y-2">
+
+            {{-- Carte info utilisateur --}}
+            <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800">
+                <span class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold select-none shrink-0">
+                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                </span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                    <span class="inline-block mt-0.5 px-1.5 py-px rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 capitalize leading-tight">{{ Auth::user()->role }}</span>
+                </div>
             </div>
 
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
+            {{-- Boutons Profil + Déconnexion ── --}}
+            <div class="flex gap-2">
+                <a href="{{ route('profile.edit') }}" @click="sidebarOpen = false"
+                   class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium
+                          text-gray-500 dark:text-gray-400
+                          hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-200
+                          border border-gray-200 dark:border-gray-700 transition-colors">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    Mon profil
+                </a>
+                <form method="POST" action="{{ route('logout') }}" class="flex-1">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
+                    <button type="submit"
+                            class="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium
+                                   text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300
+                                   hover:bg-red-50 dark:hover:bg-red-900/20
+                                   border border-red-200 dark:border-red-900/50 transition-colors">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        Déconnexion
+                    </button>
                 </form>
             </div>
         </div>
+
+        {{-- Mode COLLAPSED : avatar + icône déconnexion ── --}}
+        <div x-show="collapsed" class="p-2 space-y-1">
+            <a href="{{ route('profile.edit') }}" @click="sidebarOpen = false"
+               title="{{ Auth::user()->name }} — {{ Auth::user()->role }}"
+               class="flex justify-center p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors">
+                <span class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold select-none">
+                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                </span>
+            </a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" title="Déconnexion"
+                        class="w-full flex items-center justify-center p-2 rounded-lg
+                               text-red-600 dark:text-red-400
+                               hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
     </div>
-</nav>
+
+</aside>

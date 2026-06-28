@@ -9,6 +9,11 @@ export default {
         './resources/views/**/*.blade.php',
     ],
 
+    safelist: [
+        '!hidden',
+        '!translate-x-0',
+    ],
+
     theme: {
         extend: {
             fontFamily: {
