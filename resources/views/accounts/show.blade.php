@@ -265,7 +265,7 @@
                             </table>
                         </div>
                         <div class="mt-4 text-center">
-                            <a href="#" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                            <a href="{{ route('accounts.transactions', $account) }}" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
                                 Voir toutes les transactions →
                             </a>
                         </div>

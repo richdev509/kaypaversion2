@@ -229,6 +229,36 @@ class AccountController extends Controller
     }
 
     /**
+     * Display all transactions for a given account with pagination.
+     * Stats are computed in a single aggregate query to avoid N+1 or full-table loads.
+     */
+    public function transactions(Account $account)
+    {
+        $account->load(['client', 'plan']);
+
+        $baseQuery = $account->transactions();
+
+        // Single round-trip: all aggregate stats at once
+        $stats = (clone $baseQuery)
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN type IN ('PAIEMENT', 'Paiement initial')
+                    AND (status IS NULL OR status != 'CANCELLED') THEN amount ELSE 0 END), 0) AS total_deposits,
+                COALESCE(ABS(SUM(CASE WHEN type = 'RETRAIT'
+                    AND (status IS NULL OR status != 'CANCELLED') THEN amount ELSE 0 END)), 0) AS total_withdrawals,
+                COUNT(*)                                                                       AS total_count,
+                COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END)                              AS cancelled_count
+            ")
+            ->first();
+
+        $transactions = (clone $baseQuery)
+            ->with('creator')
+            ->latest()
+            ->paginate(20);
+
+        return view('accounts.transactions', compact('account', 'transactions', 'stats'));
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Account $account)

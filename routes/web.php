@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
     // Routes Comptes
     Route::resource('accounts', \App\Http\Controllers\AccountController::class);
     Route::post('/accounts/{account}/status', [\App\Http\Controllers\AccountController::class, 'updateStatus'])->name('accounts.status.update');
+    Route::get('/accounts/{account}/transactions', [\App\Http\Controllers\AccountController::class, 'transactions'])->name('accounts.transactions');
 
     // Routes Corrections/Ajustements de transactions
     Route::post('/transactions/{transaction}/cancel', [\App\Http\Controllers\AccountTransactionAdjustmentController::class, 'cancel'])->name('transactions.cancel');
